@@ -1,0 +1,1017 @@
+================================================================================
+                    LETTUCEGUARD - COMPLETE PROJECT STRUCTURE & SOURCE CODE
+================================================================================
+
+PROJECT OVERVIEW:
+LettuceGuard is an IoT Smart Hydroponics Monitoring & Control system for commercial
+and home lettuce cultivation. It integrates ESP32 microcontrollers with DHT22,
+DS18B20, pH, HC-SR04 ultrasonic, and TDS sensors, storing data securely in Firebase
+Authentication, Cloud Firestore, and Firebase Realtime Database. The mobile application
+is built using Flutter with Neumorphic Material 3 design.
+
+================================================================================
+                          DIRECTORY & FILE STRUCTURE
+================================================================================
+
+[ROOT] lettuceguard/
+├── .github/                         --> GitHub CI/CD Workflows & Automation Hooks
+├── android/                         --> Android Native Project Configuration & Gradle Scripts
+│   ├── app/
+│   │   ├── build.gradle.kts         --> Android Application Build Script (SDK, Dependencies)
+│   │   ├── google-services.json     --> Firebase Android Configuration Credentials
+│   │   └── src/main/
+│   │       ├── AndroidManifest.xml  --> Android Manifest (Permissions, Activity Registration)
+│   │       └── kotlin/              --> Native Kotlin Entrypoint (MainActivity.kt)
+├── assets/                          --> App Visual Assets (Icons, Images, Illustrations)
+│   ├── icons/                       --> Custom SVG / PNG App Icons
+│   └── images/                      --> Background & Hydroponic Graphic Assets
+├── firmware/                        --> IoT Microcontroller Hardware Codebase
+│   └── lettuce_guard_esp32/
+│       └── lettuce_guard_esp32.ino  --> ESP32 Arduino C++ Firmware (Sensors & Firebase Sync)
+├── ios/                             --> iOS Native Project Configuration & XCode Assets
+├── lib/                             --> Flutter Application Source Code (Dart)
+│   ├── main.dart                    --> Application Main Entry Point & Theme Registration
+│   ├── firebase_options.dart        --> FlutterFire Auto-generated Configuration
+│   ├── models/                      --> Data Models (JSON Parsing & Business Logic)
+│   │   ├── alert_model.dart         --> Hardware Sensor Failure & Range Alert Model
+│   │   ├── sensor_model.dart        --> Live Sensor Reading Model & Health Checks
+│   │   └── user_model.dart          --> Greenhouse Operator User Profile Model
+│   ├── providers/                   --> State Management Layer
+│   │   └── sensor_provider.dart     --> Central State Provider for Live Streams, Alerts & Diagnostics
+│   ├── screens/                     --> Application UI View Screens
+│   │   ├── alerts_screen.dart       --> System Diagnostics & Active Failure Alerts List
+│   │   ├── dashboard_screen.dart    --> Main Live Environmental Dashboard View
+│   │   ├── history_screen.dart      --> Historical Parameter Trends & Interactive Charts
+│   │   ├── login_screen.dart        --> Neumorphic User Login View with Password Rules
+│   │   ├── register_screen.dart     --> Account Registration (Firebase Auth & Cloud Firestore)
+│   │   ├── settings_screen.dart     --> App Settings & Hardware Fault Test Bench
+│   │   └── splash_screen.dart       --> App Splash Loading Screen
+│   ├── services/                    --> Backend Data & API Services
+│   │   ├── auth_service.dart        --> Firebase Auth & Cloud Firestore Operator Registration
+│   │   ├── encryption_service.dart  --> AES-256 Payload Encryption & Decryption Helper
+│   │   ├── firebase_service.dart    --> Firebase Realtime Database REST/Stream Client
+│   │   ├── mock_sensor_service.dart --> Simulated Hardware Sensor Generator & Fault Injector
+│   │   └── sensor_database_service.dart --> Encrypted Sensor Upload & Listener Service
+│   ├── utils/                       --> Helper Constants, Styling & Routing
+│   │   ├── colors.dart              --> Color Palette (Neumorphic & Sensor Threshold Colors)
+│   │   ├── constants.dart           --> Hydroponic Optimal Thresholds & App Constants
+│   │   └── routes.dart              --> Application Navigation Named Routes
+│   └── widgets/                     --> Custom Reusable UI Components
+│       ├── bottom_nav.dart          --> Bottom Navigation Bar with Dynamic Badge Count
+│       ├── chart_widget.dart        --> Custom-painted Time Series Parameter Chart
+│       ├── neumorphic_card.dart     --> Custom Soft-UI Neumorphic Shadow Container Card
+│       ├── sensor_card.dart         --> Live Sensor Metric Metric Card Widget
+│       ├── status_card.dart         --> Overall System Health Status Banner Widget
+│       └── water_level_card.dart    --> Animated Liquid Reservoir Volume Gauge Widget
+├── analysis_options.yaml            --> Dart Linter & Analyzer Rule Configuration
+├── firebase.json                    --> Firebase CLI Configuration & Target Mapping
+├── pubspec.yaml                     --> Flutter Package Dependencies & Project Manifest
+└── structureforlettuceguard.txt     --> Complete Architecture & Full Source Code Reference File
+
+================================================================================
+                          COMPLETE FILE SOURCE CODES
+================================================================================
+
+--------------------------------------------------------------------------------
+FILE: pubspec.yaml
+LABEL: Flutter Dependencies & Project Configuration
+--------------------------------------------------------------------------------
+name: lettuceguard
+description: "A smart IoT Hydroponics Monitoring application."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  firebase_core: ^2.27.0
+  firebase_auth: ^4.17.8
+  firebase_database: ^10.4.8
+  cloud_firestore: ^4.15.8
+  encrypt: ^5.0.3
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+--------------------------------------------------------------------------------
+FILE: lib/main.dart
+LABEL: Application Main Entry Point & MaterialApp Setup
+--------------------------------------------------------------------------------
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'providers/sensor_provider.dart';
+import 'screens/splash_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/dashboard_screen.dart';
+import 'screens/history_screen.dart';
+import 'screens/alerts_screen.dart';
+import 'screens/settings_screen.dart';
+import 'utils/colors.dart';
+import 'utils/routes.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  runApp(const LettuceGuardApp());
+}
+
+class LettuceGuardApp extends StatefulWidget {
+  const LettuceGuardApp({super.key});
+
+  @override
+  State<LettuceGuardApp> createState() => _LettuceGuardAppState();
+}
+
+class _LettuceGuardAppState extends State<LettuceGuardApp> {
+  late final SensorProvider _sensorProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    _sensorProvider = SensorProvider();
+  }
+
+  @override
+  void dispose() {
+    _sensorProvider.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SensorProviderScope(
+      provider: _sensorProvider,
+      child: ListenableBuilder(
+        listenable: _sensorProvider,
+        builder: (context, child) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'LettuceGuard',
+            themeMode: _sensorProvider.themeMode,
+            theme: ThemeData(
+              useMaterial3: true,
+              brightness: Brightness.light,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: LettuceGuardColors.primaryGreen,
+                brightness: Brightness.light,
+                surface: LettuceGuardColors.background,
+              ),
+              scaffoldBackgroundColor: LettuceGuardColors.background,
+              appBarTheme: const AppBarTheme(
+                backgroundColor: LettuceGuardColors.primaryGreen,
+                foregroundColor: Colors.white,
+              ),
+            ),
+            darkTheme: ThemeData(
+              useMaterial3: true,
+              brightness: Brightness.dark,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: LettuceGuardColors.primaryGreen,
+                brightness: Brightness.dark,
+              ),
+              scaffoldBackgroundColor: const Color(0xFF121B14),
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Color(0xFF1B2A1E),
+                foregroundColor: Colors.white,
+              ),
+            ),
+            initialRoute: LettuceGuardRoutes.splash,
+            routes: {
+              LettuceGuardRoutes.splash: (_) => const SplashScreen(),
+              LettuceGuardRoutes.login: (_) => const LoginScreen(),
+              LettuceGuardRoutes.register: (_) => const RegisterScreen(),
+              LettuceGuardRoutes.dashboard: (_) => const DashboardScreen(),
+              LettuceGuardRoutes.history: (_) => const HistoryScreen(),
+              LettuceGuardRoutes.alerts: (_) => const AlertsScreen(),
+              LettuceGuardRoutes.settings: (_) => const SettingsScreen(),
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+--------------------------------------------------------------------------------
+FILE: lib/services/auth_service.dart
+LABEL: Firebase Authentication & Cloud Firestore User Registration Service
+--------------------------------------------------------------------------------
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:firebase_database/firebase_database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/user_model.dart';
+
+class AuthService {
+  final fb_auth.FirebaseAuth _auth = fb_auth.FirebaseAuth.instance;
+  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Get current authenticated user mapped to UserModel
+  UserModel? get currentUser {
+    final fbUser = _auth.currentUser;
+    if (fbUser == null) return null;
+    return UserModel(
+      uid: fbUser.uid,
+      email: fbUser.email ?? '',
+      displayName: fbUser.displayName ?? (fbUser.email?.contains('@') == true ? fbUser.email!.split('@')[0] : 'Operator'),
+    );
+  }
+
+  // Stream for auth state changes if needed
+  Stream<UserModel?> get authStateChanges {
+    return _auth.authStateChanges().map((fbUser) {
+      if (fbUser == null) return null;
+      return UserModel(
+        uid: fbUser.uid,
+        email: fbUser.email ?? '',
+        displayName: fbUser.displayName ?? (fbUser.email?.contains('@') == true ? fbUser.email!.split('@')[0] : 'Operator'),
+      );
+    });
+  }
+
+  // Sign In with Email & Password
+  Future<UserModel> signInWithEmail(String email, String password) async {
+    try {
+      fb_auth.UserCredential credential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = credential.user!;
+      return UserModel(
+        uid: user.uid,
+        email: user.email ?? email,
+        displayName: user.displayName ?? email.split('@')[0],
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Register with Name, Email & Password (saves to Auth, Cloud Firestore & Realtime Database)
+  Future<UserModel> registerWithEmail(String name, String email, String password) async {
+    try {
+      // 1. Create user in Firebase Authentication
+      fb_auth.UserCredential credential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = credential.user!;
+
+      // Update display name in Firebase Auth
+      await user.updateDisplayName(name);
+
+      // 2. Save user details to Cloud Firestore in collection 'users' with user's UID as doc ID
+      await _firestore.collection('users').doc(user.uid).set({
+        'uid': user.uid,
+        'name': name,
+        'email': email,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // 3. Also sync user profile to Firebase Realtime Database
+      await _dbRef.child('users').child(user.uid).set({
+        'uid': user.uid,
+        'name': name,
+        'email': email,
+        'createdAt': DateTime.now().toIso8601String(),
+      });
+
+      return UserModel(
+        uid: user.uid,
+        email: user.email ?? email,
+        displayName: name,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Sign Out
+  Future<void> signOut() async {
+    await _auth.signOut();
+  }
+}
+
+--------------------------------------------------------------------------------
+FILE: lib/screens/register_screen.dart
+LABEL: Neumorphic User Registration View (Firebase Auth & Cloud Firestore Sync)
+--------------------------------------------------------------------------------
+import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
+import '../utils/colors.dart';
+import '../widgets/neumorphic_card.dart';
+
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
+
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+  String? _passwordErrorText;
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  /// Strict Password Validation Rule Checker
+  List<String> _getUnmetPasswordRules(String password) {
+    final List<String> unmet = [];
+    if (password.length < 8 || password.length > 12) {
+      unmet.add('Length must be between 8 and 12 characters.');
+    }
+    if (!RegExp(r'[A-Z]').hasMatch(password)) {
+      unmet.add('Must contain at least 1 Uppercase letter (A-Z).');
+    }
+    if (!RegExp(r'[0-9]').hasMatch(password)) {
+      unmet.add('Must contain at least 1 Number (0-9).');
+    }
+    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) {
+      unmet.add('Must contain at least 1 Special character (!@#\$%^&*...).');
+    }
+    return unmet;
+  }
+
+  String? _validatePassword(String password) {
+    if (password.isEmpty) {
+      return 'Password is required.';
+    }
+    final unmet = _getUnmetPasswordRules(password);
+    if (unmet.isNotEmpty) {
+      return unmet.first;
+    }
+    return null;
+  }
+
+  void _showPasswordGuideDialog(List<String> unmetRules) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: LettuceGuardColors.neuBackground,
+        title: const Row(
+          children: [
+            Icon(Icons.shield_outlined, color: LettuceGuardColors.statusError, size: 28),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Password Guide',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: LettuceGuardColors.textDark),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Your password must satisfy all requirements:',
+              style: TextStyle(fontSize: 13, color: LettuceGuardColors.textDark),
+            ),
+            const SizedBox(height: 12),
+            ...unmetRules.map(
+              (rule) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.cancel, color: LettuceGuardColors.statusError, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        rule,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: LettuceGuardColors.textDark),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: LettuceGuardColors.primaryGreen,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('GOT IT'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleRegistration() async {
+    final name = nameController.text.trim();
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (name.isEmpty || email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill in your name and email address.'),
+          backgroundColor: LettuceGuardColors.statusError,
+        ),
+      );
+      return;
+    }
+
+    final unmetRules = _getUnmetPasswordRules(password);
+    if (unmetRules.isNotEmpty) {
+      setState(() {
+        _passwordErrorText = unmetRules.first;
+      });
+      _showPasswordGuideDialog(unmetRules);
+      return;
+    }
+
+    setState(() {
+      _passwordErrorText = null;
+      _isLoading = true;
+    });
+
+    try {
+      // Register in Firebase Auth & write profile to Cloud Firestore (collection 'users')
+      await _authService.registerWithEmail(name, email, password);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Account for $name created successfully! Log in to continue.'),
+          backgroundColor: LettuceGuardColors.primaryGreen,
+        ),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      String errorMessage = 'Registration failed. Please check your connection and try again.';
+      final errStr = e.toString().toLowerCase();
+
+      if (errStr.contains('email-already-in-use')) {
+        errorMessage = 'This email address is already registered.';
+      } else if (errStr.contains('invalid-email')) {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (errStr.contains('weak-password')) {
+        errorMessage = 'The password provided is too weak.';
+      } else if (errStr.contains('permission-denied')) {
+        errorMessage = 'Database permission denied. Check Firebase security rules.';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: LettuceGuardColors.statusError,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: LettuceGuardColors.neuBackground,
+      appBar: AppBar(
+        title: const Text(
+          'Create Account',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: LettuceGuardColors.primaryGreen,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: Stack(
+        children: [
+          // Background Gradient Overlay
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: NetworkImage(
+                    'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=1200&q=80',
+                  ),
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
+                ),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      LettuceGuardColors.neuBackground.withValues(alpha: 0.92),
+                      LettuceGuardColors.neuBackground.withValues(alpha: 0.82),
+                      LettuceGuardColors.primaryGreen.withValues(alpha: 0.15),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    NeumorphicCard(
+                      borderRadius: 100,
+                      padding: const EdgeInsets.all(18),
+                      distance: 6,
+                      blur: 14,
+                      child: const Icon(
+                        Icons.person_add_alt_1_rounded,
+                        size: 48,
+                        color: LettuceGuardColors.primaryGreen,
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    const Text(
+                      'Join LettuceGuard',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: LettuceGuardColors.textDark,
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    const Text(
+                      'Set up your greenhouse operator profile',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: LettuceGuardColors.textMuted,
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    NeumorphicCard(
+                      borderRadius: 28,
+                      padding: const EdgeInsets.all(24),
+                      distance: 10,
+                      blur: 20,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Operator Details',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: LettuceGuardColors.textDark,
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+
+                          // Full Name Input Field
+                          NeumorphicCard(
+                            isInset: true,
+                            borderRadius: 16,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            distance: 3,
+                            blur: 6,
+                            child: TextField(
+                              controller: nameController,
+                              enabled: !_isLoading,
+                              decoration: const InputDecoration(
+                                labelText: 'Full Name',
+                                labelStyle: TextStyle(fontSize: 13, color: LettuceGuardColors.textMuted),
+                                prefixIcon: Icon(Icons.person_outline, color: LettuceGuardColors.primaryGreen),
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Email Input Field
+                          NeumorphicCard(
+                            isInset: true,
+                            borderRadius: 16,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            distance: 3,
+                            blur: 6,
+                            child: TextField(
+                              controller: emailController,
+                              enabled: !_isLoading,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: const InputDecoration(
+                                labelText: 'Email Address',
+                                labelStyle: TextStyle(fontSize: 13, color: LettuceGuardColors.textMuted),
+                                prefixIcon: Icon(Icons.email_outlined, color: LettuceGuardColors.primaryGreen),
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Password Input Field with Interactive Eye Toggle & Validation
+                          NeumorphicCard(
+                            isInset: true,
+                            borderRadius: 16,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            distance: 3,
+                            blur: 6,
+                            child: TextField(
+                              controller: passwordController,
+                              enabled: !_isLoading,
+                              obscureText: _obscurePassword,
+                              onChanged: (val) {
+                                if (_passwordErrorText != null) {
+                                  setState(() {
+                                    _passwordErrorText = _validatePassword(val);
+                                  });
+                                }
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Password',
+                                hintText: '8-12 chars, A-Z, 0-9, symbol',
+                                hintStyle: const TextStyle(fontSize: 11, color: Colors.black38),
+                                labelStyle: const TextStyle(fontSize: 13, color: LettuceGuardColors.textMuted),
+                                prefixIcon: const Icon(Icons.lock_outline, color: LettuceGuardColors.primaryGreen),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                    color: LettuceGuardColors.textMuted,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
+                                ),
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+
+                          if (_passwordErrorText != null) ...[
+                            const SizedBox(height: 6),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: Text(
+                                _passwordErrorText!,
+                                style: const TextStyle(
+                                  color: LettuceGuardColors.statusError,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+
+                          const SizedBox(height: 24),
+
+                          // Neumorphic Register Button
+                          GestureDetector(
+                            onTap: _isLoading ? null : _handleRegistration,
+                            child: NeumorphicCard(
+                              borderRadius: 18,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              backgroundColor: LettuceGuardColors.primaryGreen,
+                              distance: 6,
+                              blur: 12,
+                              child: Center(
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      )
+                                    : const Text(
+                                        'CREATE ACCOUNT',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.0,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    TextButton.icon(
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              Navigator.pop(context);
+                            },
+                      icon: const Icon(Icons.arrow_back, size: 18, color: LettuceGuardColors.primaryGreen),
+                      label: const Text(
+                        'Already have an account? Sign In',
+                        style: TextStyle(
+                          color: LettuceGuardColors.primaryGreen,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+--------------------------------------------------------------------------------
+FILE: lib/models/sensor_model.dart
+LABEL: Hydroponics Sensor Data Model & Threshold Calculation Logic
+--------------------------------------------------------------------------------
+import '../utils/constants.dart';
+
+class SensorData {
+  final double airTemperature;
+  final double airHumidity;
+  final double waterTemperature;
+  final double ph;
+  final double tds;
+  final double waterLevelPct;
+  final double waterLevelCm;
+  final double reservoirDepthCm;
+  final DateTime timestamp;
+  final String systemStatus;
+
+  final bool dht22Error;
+  final bool ds18b20Error;
+  final bool phError;
+  final bool ultrasonicError;
+  final bool tdsError;
+  final bool adcSaturation;
+  final bool phUncalibrated;
+
+  const SensorData({
+    required this.airTemperature,
+    required this.airHumidity,
+    required this.waterTemperature,
+    required this.ph,
+    required this.tds,
+    required this.waterLevelPct,
+    required this.waterLevelCm,
+    this.reservoirDepthCm = LettuceGuardConstants.defaultReservoirDepthCm,
+    required this.timestamp,
+    this.systemStatus = 'OK',
+    this.dht22Error = false,
+    this.ds18b20Error = false,
+    this.phError = false,
+    this.ultrasonicError = false,
+    this.tdsError = false,
+    this.adcSaturation = false,
+    this.phUncalibrated = false,
+  });
+
+  factory SensorData.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic> errors = {};
+    if (json['sensorErrors'] is Map) {
+      errors = Map<String, dynamic>.from(json['sensorErrors']);
+    }
+
+    double levelPct = 0.0;
+    double levelCm = 0.0;
+    double depthCm = LettuceGuardConstants.defaultReservoirDepthCm;
+
+    if (json['waterLevel'] is Map) {
+      final wl = Map<String, dynamic>.from(json['waterLevel']);
+      levelPct = (wl['percentage'] as num?)?.toDouble() ?? 0.0;
+      levelCm = (wl['distanceCm'] as num?)?.toDouble() ?? 0.0;
+      depthCm = (wl['reservoirDepthCm'] as num?)?.toDouble() ?? depthCm;
+    } else {
+      levelPct = (json['waterLevelPct'] as num?)?.toDouble() ?? 0.0;
+      levelCm = (json['waterLevelCm'] as num?)?.toDouble() ?? 0.0;
+      depthCm = (json['reservoirDepthCm'] as num?)?.toDouble() ?? depthCm;
+    }
+
+    DateTime ts;
+    if (json['timestamp'] is int) {
+      ts = DateTime.fromMillisecondsSinceEpoch(json['timestamp']);
+    } else if (json['timestamp'] is String) {
+      ts = DateTime.tryParse(json['timestamp']) ?? DateTime.now();
+    } else {
+      ts = DateTime.now();
+    }
+
+    return SensorData(
+      airTemperature: (json['airTemperature'] as num?)?.toDouble() ?? 0.0,
+      airHumidity: (json['airHumidity'] as num?)?.toDouble() ?? 0.0,
+      waterTemperature: (json['waterTemperature'] as num?)?.toDouble() ?? 0.0,
+      ph: (json['ph'] as num?)?.toDouble() ?? 7.0,
+      tds: (json['tds'] as num?)?.toDouble() ?? 0.0,
+      waterLevelPct: levelPct,
+      waterLevelCm: levelCm,
+      reservoirDepthCm: depthCm,
+      timestamp: ts,
+      systemStatus: (json['systemStatus'] as String?) ?? 'OK',
+      dht22Error: (errors['dht22Error'] as bool?) ?? false,
+      ds18b20Error: (errors['ds18b20Error'] as bool?) ?? false,
+      phError: (errors['phError'] as bool?) ?? false,
+      ultrasonicError: (errors['ultrasonicError'] as bool?) ?? false,
+      tdsError: (errors['tdsError'] as bool?) ?? false,
+      adcSaturation: (errors['adcSaturation'] as bool?) ?? false,
+      phUncalibrated: (errors['phUncalibrated'] as bool?) ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'airTemperature': airTemperature,
+      'airHumidity': airHumidity,
+      'waterTemperature': waterTemperature,
+      'ph': ph,
+      'tds': tds,
+      'waterLevel': {
+        'percentage': waterLevelPct,
+        'distanceCm': waterLevelCm,
+        'reservoirDepthCm': reservoirDepthCm,
+      },
+      'systemStatus': calculatedStatus,
+      'sensorErrors': {
+        'dht22Error': dht22Error,
+        'ds18b20Error': ds18b20Error,
+        'phError': phError,
+        'ultrasonicError': ultrasonicError,
+        'tdsError': tdsError,
+        'adcSaturation': adcSaturation,
+        'phUncalibrated': phUncalibrated,
+      },
+      'timestamp': timestamp.millisecondsSinceEpoch,
+    };
+  }
+
+  factory SensorData.mock({
+    double airTemp = 23.5,
+    double humidity = 62.0,
+    double waterTemp = 20.2,
+    double phValue = 6.1,
+    double tdsValue = 720.0,
+    double levelPct = 85.0,
+    double levelCm = 4.5,
+  }) {
+    return SensorData(
+      airTemperature: airTemp,
+      airHumidity: humidity,
+      waterTemperature: waterTemp,
+      ph: phValue,
+      tds: tdsValue,
+      waterLevelPct: levelPct,
+      waterLevelCm: levelCm,
+      timestamp: DateTime.now(),
+    );
+  }
+
+  bool get hasSensorError =>
+      dht22Error || ds18b20Error || phError || ultrasonicError || tdsError || adcSaturation || phUncalibrated;
+
+  bool get isAirTempOutOfRange =>
+      !dht22Error && (airTemperature < LettuceGuardConstants.minAirTemp || airTemperature > LettuceGuardConstants.maxAirTemp);
+
+  bool get isAirHumidityOutOfRange =>
+      !dht22Error && (airHumidity < LettuceGuardConstants.minAirHumidity || airHumidity > LettuceGuardConstants.maxAirHumidity);
+
+  bool get isWaterTempOutOfRange =>
+      !ds18b20Error && (waterTemperature < LettuceGuardConstants.minWaterTemp || waterTemperature > LettuceGuardConstants.maxWaterTemp);
+
+  bool get isPhOutOfRange =>
+      !phError && !phUncalibrated && (ph < LettuceGuardConstants.minPh || ph > LettuceGuardConstants.maxPh);
+
+  bool get isTdsOutOfRange =>
+      !tdsError && (tds < LettuceGuardConstants.minTds || tds > LettuceGuardConstants.maxTds);
+
+  bool get isWaterLevelLow =>
+      !ultrasonicError && waterLevelPct < LettuceGuardConstants.minWaterLevelPct;
+
+  bool get hasParameterWarning =>
+      isAirTempOutOfRange || isAirHumidityOutOfRange || isWaterTempOutOfRange || isPhOutOfRange || isTdsOutOfRange || isWaterLevelLow;
+
+  String get calculatedStatus {
+    if (hasSensorError) return 'ERROR';
+    if (hasParameterWarning) return 'WARNING';
+    return 'OK';
+  }
+}
+
+--------------------------------------------------------------------------------
+FILE: firmware/lettuce_guard_esp32/lettuce_guard_esp32.ino
+LABEL: ESP32 Arduino C++ Firmware (Sensors & Firebase Sync)
+--------------------------------------------------------------------------------
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <DHT.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <ArduinoJson.h>
+
+const char* WIFI_SSID = "YOUR_WIFI_SSID";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+const char* FIREBASE_HOST = "https://lettuceguard-app-default-rtdb.firebaseio.com";
+const char* DEVICE_ID = "lettuceguard_node_01";
+
+#define DHTPIN 4
+#define DHTTYPE DHT22
+#define ONE_WIRE_BUS 15
+#define PH_PIN 34
+#define TDS_PIN 35
+#define TRIG_PIN 5
+#define ECHO_PIN 18
+
+const float RESERVOIR_DEPTH_CM = 30.0;
+DHT dht(DHTPIN, DHTTYPE);
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature ds18b20(&oneWire);
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+  dht.begin();
+  ds18b20.begin();
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+}
+
+void loop() {
+  if (WiFi.status() == WL_CONNECTED) {
+    float airTempC = dht.readTemperature();
+    float airHumidity = dht.readHumidity();
+    ds18b20.requestTemperatures();
+    float waterTempC = ds18b20.getTempCByIndex(0);
+
+    StaticJsonDocument<256> doc;
+    doc["airTemperature"] = airTempC;
+    doc["airHumidity"] = airHumidity;
+    doc["waterTemperature"] = waterTempC;
+
+    String jsonString;
+    serializeJson(doc, jsonString);
+
+    HTTPClient http;
+    http.begin(String(FIREBASE_HOST) + "/devices/" + DEVICE_ID + "/current.json");
+    http.addHeader("Content-Type", "application/json");
+    http.PUT(jsonString);
+    http.end();
+  }
+  delay(3000);
+}
+
+================================================================================
+                    END OF FILE STRUCTURE & SOURCE CODES
+================================================================================
