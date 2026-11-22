@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: LettuceGuardColors.primaryGreen.withOpacity(0.12),
+                color: LettuceGuardColors.primaryGreen.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -62,7 +62,9 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: 30),
             const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(LettuceGuardColors.primaryGreen),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                LettuceGuardColors.primaryGreen,
+              ),
             ),
           ],
         ),

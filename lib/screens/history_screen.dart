@@ -48,11 +48,36 @@ class _HistoryScreenState extends State<HistoryScreen> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildParamChip('pH Level', ChartParameter.ph, Icons.science, LettuceGuardColors.phColor),
-                  _buildParamChip('Water Temp', ChartParameter.waterTemp, Icons.device_thermostat, LettuceGuardColors.waterTempColor),
-                  _buildParamChip('Air Temp', ChartParameter.airTemp, Icons.thermostat, LettuceGuardColors.airTempColor),
-                  _buildParamChip('Humidity', ChartParameter.humidity, Icons.water_drop, LettuceGuardColors.humidityColor),
-                  _buildParamChip('Water Level', ChartParameter.waterLevel, Icons.waves, LettuceGuardColors.waterLevelColor),
+                  _buildParamChip(
+                    'pH Level',
+                    ChartParameter.ph,
+                    Icons.science,
+                    LettuceGuardColors.phColor,
+                  ),
+                  _buildParamChip(
+                    'Water Temp',
+                    ChartParameter.waterTemp,
+                    Icons.device_thermostat,
+                    LettuceGuardColors.waterTempColor,
+                  ),
+                  _buildParamChip(
+                    'Air Temp',
+                    ChartParameter.airTemp,
+                    Icons.thermostat,
+                    LettuceGuardColors.airTempColor,
+                  ),
+                  _buildParamChip(
+                    'Humidity',
+                    ChartParameter.humidity,
+                    Icons.water_drop,
+                    LettuceGuardColors.humidityColor,
+                  ),
+                  _buildParamChip(
+                    'Water Level',
+                    ChartParameter.waterLevel,
+                    Icons.waves,
+                    LettuceGuardColors.waterLevelColor,
+                  ),
                 ],
               ),
             ),
@@ -60,10 +85,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             const SizedBox(height: 16),
 
             // Time-series Chart Widget
-            ChartWidget(
-              dataPoints: history,
-              selectedParameter: _selectedParam,
-            ),
+            ChartWidget(dataPoints: history, selectedParameter: _selectedParam),
 
             const SizedBox(height: 20),
 
@@ -95,7 +117,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: history.length > 15 ? 15 : history.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 // Reverse to show most recent at top
                 final log = history[history.length - 1 - index];
@@ -106,14 +128,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: LettuceGuardColors.borderLight),
+                    side: const BorderSide(
+                      color: LettuceGuardColors.borderLight,
+                    ),
                   ),
                   color: Colors.white,
                   child: ListTile(
                     dense: true,
                     leading: CircleAvatar(
                       radius: 16,
-                      backgroundColor: LettuceGuardColors.primaryGreen.withOpacity(0.12),
+                      backgroundColor: LettuceGuardColors.primaryGreen
+                          .withValues(alpha: 0.12),
                       child: Text(
                         timeStr,
                         style: const TextStyle(
@@ -126,21 +151,40 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     title: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('pH: ${log.ph.toStringAsFixed(2)}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text('Water: ${log.waterTemperature.toStringAsFixed(1)}°C',
-                            style: const TextStyle(fontSize: 12)),
-                        Text('Air: ${log.airTemperature.toStringAsFixed(1)}°C',
-                            style: const TextStyle(fontSize: 12)),
+                        Text(
+                          'pH: ${log.ph.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Text(
+                          'Water: ${log.waterTemperature.toStringAsFixed(1)}°C',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        Text(
+                          'Air: ${log.airTemperature.toStringAsFixed(1)}°C',
+                          style: const TextStyle(fontSize: 12),
+                        ),
                       ],
                     ),
                     subtitle: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Humidity: ${log.airHumidity.toStringAsFixed(0)}%',
-                            style: const TextStyle(fontSize: 11, color: LettuceGuardColors.textMuted)),
-                        Text('Level: ${log.waterLevelPct.toStringAsFixed(0)}%',
-                            style: const TextStyle(fontSize: 11, color: LettuceGuardColors.textMuted)),
+                        Text(
+                          'Humidity: ${log.airHumidity.toStringAsFixed(0)}%',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: LettuceGuardColors.textMuted,
+                          ),
+                        ),
+                        Text(
+                          'Level: ${log.waterLevelPct.toStringAsFixed(0)}%',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: LettuceGuardColors.textMuted,
+                          ),
+                        ),
                       ],
                     ),
                   ),

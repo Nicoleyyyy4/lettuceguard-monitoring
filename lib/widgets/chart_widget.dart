@@ -107,9 +107,12 @@ class ChartWidget extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: lineColor.withOpacity(0.12),
+                    color: lineColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -140,10 +143,20 @@ class ChartWidget extends StatelessWidget {
             const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Past 12 Hours',
-                    style: TextStyle(fontSize: 10, color: LettuceGuardColors.textMuted)),
-                Text('Now',
-                    style: TextStyle(fontSize: 10, color: LettuceGuardColors.textMuted)),
+                Text(
+                  'Past 12 Hours',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: LettuceGuardColors.textMuted,
+                  ),
+                ),
+                Text(
+                  'Now',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: LettuceGuardColors.textMuted,
+                  ),
+                ),
               ],
             ),
           ],
@@ -184,32 +197,53 @@ class _LineChartPainter extends CustomPainter {
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
-    final double optimalTopY = size.height - ((maxOptimal - minY) / rangeY * size.height);
-    final double optimalBottomY = size.height - ((minOptimal - minY) / rangeY * size.height);
+    final double optimalTopY =
+        size.height - ((maxOptimal - minY) / rangeY * size.height);
+    final double optimalBottomY =
+        size.height - ((minOptimal - minY) / rangeY * size.height);
 
     final Paint fillOptimalPaint = Paint()
-      ..color = LettuceGuardColors.primaryGreen.withOpacity(0.08)
+      ..color = LettuceGuardColors.primaryGreen.withValues(alpha: 0.08)
       ..style = PaintingStyle.fill;
 
     canvas.drawRect(
-      Rect.fromLTRB(0, optimalTopY.clamp(0.0, size.height), size.width, optimalBottomY.clamp(0.0, size.height)),
+      Rect.fromLTRB(
+        0,
+        optimalTopY.clamp(0.0, size.height),
+        size.width,
+        optimalBottomY.clamp(0.0, size.height),
+      ),
       fillOptimalPaint,
     );
 
     // Grid lines
-    canvas.drawLine(Offset(0, size.height * 0.25), Offset(size.width, size.height * 0.25), gridPaint);
-    canvas.drawLine(Offset(0, size.height * 0.5), Offset(size.width, size.height * 0.5), gridPaint);
-    canvas.drawLine(Offset(0, size.height * 0.75), Offset(size.width, size.height * 0.75), gridPaint);
+    canvas.drawLine(
+      Offset(0, size.height * 0.25),
+      Offset(size.width, size.height * 0.25),
+      gridPaint,
+    );
+    canvas.drawLine(
+      Offset(0, size.height * 0.5),
+      Offset(size.width, size.height * 0.5),
+      gridPaint,
+    );
+    canvas.drawLine(
+      Offset(0, size.height * 0.75),
+      Offset(size.width, size.height * 0.75),
+      gridPaint,
+    );
 
     // Draw Line Graph
     final Path path = Path();
     final Path fillPath = Path();
 
-    final double dx = size.width / (values.length - 1 > 0 ? values.length - 1 : 1);
+    final double dx =
+        size.width / (values.length - 1 > 0 ? values.length - 1 : 1);
 
     for (int i = 0; i < values.length; i++) {
       final double x = i * dx;
-      final double y = size.height - ((values[i] - minY) / rangeY * size.height);
+      final double y =
+          size.height - ((values[i] - minY) / rangeY * size.height);
 
       if (i == 0) {
         path.moveTo(x, y);
@@ -232,7 +266,10 @@ class _LineChartPainter extends CustomPainter {
 
     final Paint areaPaint = Paint()
       ..shader = LinearGradient(
-        colors: [lineColor.withOpacity(0.3), lineColor.withOpacity(0.01)],
+        colors: [
+          lineColor.withValues(alpha: 0.3),
+          lineColor.withValues(alpha: 0.01),
+        ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(Rect.fromLTRB(0, 0, size.width, size.height));
@@ -247,7 +284,8 @@ class _LineChartPainter extends CustomPainter {
 
     for (int i = 0; i < values.length; i++) {
       final double x = i * dx;
-      final double y = size.height - ((values[i] - minY) / rangeY * size.height);
+      final double y =
+          size.height - ((values[i] - minY) / rangeY * size.height);
       canvas.drawCircle(Offset(x, y), 3.5, pointPaint);
     }
   }

@@ -25,7 +25,7 @@
 const char* WIFI_SSID = "YOUR_WIFI_SSID";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
-// Firebase Realtime Database Base URL (without trailing slash)
+// Firebase Realtime Database Base URL (without trailing slash) 
 const char* FIREBASE_HOST = "https://lettuceguard-app-default-rtdb.firebaseio.com";
 const char* DEVICE_ID = "lettuceguard_node_01";
 

@@ -3,7 +3,8 @@ import '../utils/colors.dart';
 
 class WaterLevelCard extends StatelessWidget {
   final double percentage; // e.g. 85.0%
-  final double distanceCm; // distance from HC-SR04 to water surface (e.g. 4.5 cm)
+  final double
+  distanceCm; // distance from HC-SR04 to water surface (e.g. 4.5 cm)
   final double reservoirDepthCm; // total height (e.g. 30.0 cm)
   final bool isError;
   final bool isLow;
@@ -33,7 +34,9 @@ class WaterLevelCard extends StatelessWidget {
         side: BorderSide(
           color: isError
               ? LettuceGuardColors.statusError
-              : (isLow ? LettuceGuardColors.statusWarning : LettuceGuardColors.borderLight),
+              : (isLow
+                    ? LettuceGuardColors.statusWarning
+                    : LettuceGuardColors.borderLight),
           width: isError || isLow ? 2 : 1,
         ),
       ),
@@ -67,13 +70,20 @@ class WaterLevelCard extends StatelessWidget {
                 ),
 
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: isError
-                        ? LettuceGuardColors.statusError.withOpacity(0.12)
+                        ? LettuceGuardColors.statusError.withValues(alpha: 0.12)
                         : (isLow
-                            ? LettuceGuardColors.statusWarning.withOpacity(0.12)
-                            : LettuceGuardColors.primaryGreen.withOpacity(0.12)),
+                              ? LettuceGuardColors.statusWarning.withValues(
+                                  alpha: 0.12,
+                                )
+                              : LettuceGuardColors.primaryGreen.withValues(
+                                  alpha: 0.12,
+                                )),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -86,8 +96,8 @@ class WaterLevelCard extends StatelessWidget {
                       color: isError
                           ? LettuceGuardColors.statusError
                           : (isLow
-                              ? LettuceGuardColors.statusWarning
-                              : LettuceGuardColors.primaryGreen),
+                                ? LettuceGuardColors.statusWarning
+                                : LettuceGuardColors.primaryGreen),
                     ),
                   ),
                 ),
@@ -111,7 +121,9 @@ class WaterLevelCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                         color: isError
                             ? LettuceGuardColors.statusError
-                            : (isLow ? LettuceGuardColors.statusWarning : LettuceGuardColors.textDark),
+                            : (isLow
+                                  ? LettuceGuardColors.statusWarning
+                                  : LettuceGuardColors.textDark),
                       ),
                     ),
                     const Text(
@@ -174,11 +186,17 @@ class WaterLevelCard extends StatelessWidget {
               children: [
                 Text(
                   'Tank Depth: ${reservoirDepthCm.toInt()} cm',
-                  style: const TextStyle(fontSize: 11, color: LettuceGuardColors.textMuted),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: LettuceGuardColors.textMuted,
+                  ),
                 ),
                 Text(
                   'Sensor: HC-SR04 Ultrasonic',
-                  style: const TextStyle(fontSize: 11, color: LettuceGuardColors.textMuted),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: LettuceGuardColors.textMuted,
+                  ),
                 ),
               ],
             ),

@@ -62,12 +62,13 @@ class StatusCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: (status == 'ERROR'
-                      ? LettuceGuardColors.statusError
-                      : (status == 'WARNING'
-                          ? LettuceGuardColors.statusWarning
-                          : LettuceGuardColors.statusOk))
-                  .withOpacity(0.15),
+              color:
+                  (status == 'ERROR'
+                          ? LettuceGuardColors.statusError
+                          : (status == 'WARNING'
+                                ? LettuceGuardColors.statusWarning
+                                : LettuceGuardColors.statusOk))
+                      .withValues(alpha: 0.15),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -84,7 +85,7 @@ class StatusCard extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
+                        color: Colors.black.withValues(alpha: 0.06),
                         blurRadius: 6,
                       ),
                     ],
@@ -94,8 +95,8 @@ class StatusCard extends StatelessWidget {
                     color: status == 'ERROR'
                         ? LettuceGuardColors.statusError
                         : (status == 'WARNING'
-                            ? LettuceGuardColors.statusWarning
-                            : LettuceGuardColors.statusOk),
+                              ? LettuceGuardColors.statusWarning
+                              : LettuceGuardColors.statusOk),
                     size: 30,
                   ),
                 ),
@@ -117,24 +118,31 @@ class StatusCard extends StatelessWidget {
                                 color: status == 'ERROR'
                                     ? LettuceGuardColors.statusError
                                     : (status == 'WARNING'
-                                        ? LettuceGuardColors.statusWarning
-                                        : LettuceGuardColors.statusOk),
+                                          ? LettuceGuardColors.statusWarning
+                                          : LettuceGuardColors.statusOk),
                               ),
                             ),
                           ),
 
                           // Online pulse status pill
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
-                              color: isConnected ? Colors.green.shade800 : Colors.red.shade800,
+                              color: isConnected
+                                  ? Colors.green.shade800
+                                  : Colors.red.shade800,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Row(
                               children: [
                                 CircleAvatar(
                                   radius: 3,
-                                  backgroundColor: isConnected ? Colors.greenAccent : Colors.redAccent,
+                                  backgroundColor: isConnected
+                                      ? Colors.greenAccent
+                                      : Colors.redAccent,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -175,7 +183,11 @@ class StatusCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.access_time, size: 14, color: LettuceGuardColors.textMuted),
+                    const Icon(
+                      Icons.access_time,
+                      size: 14,
+                      color: LettuceGuardColors.textMuted,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'Last updated: $formattedTime',
@@ -189,7 +201,10 @@ class StatusCard extends StatelessWidget {
 
                 if (errorCount > 0)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: LettuceGuardColors.statusError,
                       borderRadius: BorderRadius.circular(10),

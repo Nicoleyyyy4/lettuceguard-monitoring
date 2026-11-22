@@ -30,18 +30,20 @@ class SensorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color cardBorderColor = LettuceGuardColors.borderLight;
-    Color statusBadgeBg = LettuceGuardColors.primaryGreen.withOpacity(0.12);
+    Color statusBadgeBg = LettuceGuardColors.primaryGreen.withValues(
+      alpha: 0.12,
+    );
     Color statusTextColor = LettuceGuardColors.primaryGreen;
     String statusText = 'Optimal';
 
     if (isError) {
       cardBorderColor = LettuceGuardColors.statusError;
-      statusBadgeBg = LettuceGuardColors.statusError.withOpacity(0.12);
+      statusBadgeBg = LettuceGuardColors.statusError.withValues(alpha: 0.12);
       statusTextColor = LettuceGuardColors.statusError;
       statusText = 'SENSOR ERROR';
     } else if (isWarning) {
       cardBorderColor = LettuceGuardColors.statusWarning;
-      statusBadgeBg = LettuceGuardColors.statusWarning.withOpacity(0.12);
+      statusBadgeBg = LettuceGuardColors.statusWarning.withValues(alpha: 0.12);
       statusTextColor = LettuceGuardColors.statusWarning;
       statusText = 'Out of Range';
     }
@@ -50,7 +52,10 @@ class SensorCard extends StatelessWidget {
       elevation: isError || isWarning ? 3 : 1,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: cardBorderColor, width: isError || isWarning ? 2 : 1),
+        side: BorderSide(
+          color: cardBorderColor,
+          width: isError || isWarning ? 2 : 1,
+        ),
       ),
       color: Colors.white,
       child: InkWell(
@@ -69,18 +74,27 @@ class SensorCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: (isError ? LettuceGuardColors.statusError : themeColor).withOpacity(0.12),
+                      color:
+                          (isError
+                                  ? LettuceGuardColors.statusError
+                                  : themeColor)
+                              .withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       icon,
                       size: 22,
-                      color: isError ? LettuceGuardColors.statusError : themeColor,
+                      color: isError
+                          ? LettuceGuardColors.statusError
+                          : themeColor,
                     ),
                   ),
 
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: statusBadgeBg,
                       borderRadius: BorderRadius.circular(12),
@@ -126,7 +140,9 @@ class SensorCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                         color: isError
                             ? LettuceGuardColors.statusError
-                            : (isWarning ? LettuceGuardColors.statusWarning : LettuceGuardColors.textDark),
+                            : (isWarning
+                                  ? LettuceGuardColors.statusWarning
+                                  : LettuceGuardColors.textDark),
                       ),
                     ),
 

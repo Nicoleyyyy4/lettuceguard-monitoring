@@ -69,7 +69,9 @@ class AlertsScreen extends StatelessWidget {
                           Icon(
                             Icons.check_circle_outline_rounded,
                             size: 70,
-                            color: LettuceGuardColors.primaryGreen.withValues(alpha: 0.5),
+                            color: LettuceGuardColors.primaryGreen.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                           const SizedBox(height: 12),
                           const Text(
@@ -96,7 +98,7 @@ class AlertsScreen extends StatelessWidget {
                   Expanded(
                     child: ListView.separated(
                       itemCount: alerts.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final alert = alerts[index];
                         return _buildAlertCard(context, alert);
@@ -137,10 +139,7 @@ class AlertsScreen extends StatelessWidget {
       elevation: alert.isResolved ? 0 : 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: cardBorder,
-          width: alert.isResolved ? 1 : 1.5,
-        ),
+        side: BorderSide(color: cardBorder, width: alert.isResolved ? 1 : 1.5),
       ),
       color: alert.isResolved ? Colors.grey.shade50 : Colors.white,
       child: Padding(
@@ -150,17 +149,14 @@ class AlertsScreen extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: iconBg,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
               child: Icon(
                 icon,
                 color: alert.isResolved
                     ? Colors.grey
                     : (alert.severity == AlertSeverity.error
-                    ? LettuceGuardColors.statusError
-                    : LettuceGuardColors.statusWarning),
+                          ? LettuceGuardColors.statusError
+                          : LettuceGuardColors.statusWarning),
                 size: 24,
               ),
             ),
@@ -191,7 +187,10 @@ class AlertsScreen extends StatelessWidget {
                       ),
 
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: alert.isResolved
                               ? Colors.grey.shade200

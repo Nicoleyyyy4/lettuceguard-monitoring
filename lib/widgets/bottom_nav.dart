@@ -18,17 +18,23 @@ class LettuceGuardBottomNav extends StatelessWidget {
     return NavigationBar(
       selectedIndex: currentIndex,
       onDestinationSelected: onTap,
-      indicatorColor: LettuceGuardColors.primaryGreen.withOpacity(0.18),
+      indicatorColor: LettuceGuardColors.primaryGreen.withValues(alpha: 0.18),
       destinations: [
         const NavigationDestination(
           icon: Icon(Icons.dashboard_outlined),
-          selectedIcon: Icon(Icons.dashboard, color: LettuceGuardColors.primaryGreen),
+          selectedIcon: Icon(
+            Icons.dashboard,
+            color: LettuceGuardColors.primaryGreen,
+          ),
           label: 'Dashboard',
         ),
 
         const NavigationDestination(
           icon: Icon(Icons.show_chart_outlined),
-          selectedIcon: Icon(Icons.show_chart, color: LettuceGuardColors.primaryGreen),
+          selectedIcon: Icon(
+            Icons.show_chart,
+            color: LettuceGuardColors.primaryGreen,
+          ),
           label: 'History',
         ),
 
@@ -44,15 +50,24 @@ class LettuceGuardBottomNav extends StatelessWidget {
               ? Badge(
                   label: Text(alertBadgeCount.toString()),
                   backgroundColor: LettuceGuardColors.statusError,
-                  child: const Icon(Icons.notifications, color: LettuceGuardColors.primaryGreen),
+                  child: const Icon(
+                    Icons.notifications,
+                    color: LettuceGuardColors.primaryGreen,
+                  ),
                 )
-              : const Icon(Icons.notifications, color: LettuceGuardColors.primaryGreen),
+              : const Icon(
+                  Icons.notifications,
+                  color: LettuceGuardColors.primaryGreen,
+                ),
           label: 'Alerts',
         ),
 
         const NavigationDestination(
           icon: Icon(Icons.settings_outlined),
-          selectedIcon: Icon(Icons.settings, color: LettuceGuardColors.primaryGreen),
+          selectedIcon: Icon(
+            Icons.settings,
+            color: LettuceGuardColors.primaryGreen,
+          ),
           label: 'Settings',
         ),
       ],

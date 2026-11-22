@@ -12,14 +12,106 @@ import 'screens/settings_screen.dart';
 import 'utils/colors.dart';
 import 'utils/routes.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  runApp(const FirebaseStartupGate());
+}
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+class FirebaseStartupGate extends StatefulWidget {
+  const FirebaseStartupGate({super.key});
 
-  runApp(const LettuceGuardApp());
+  @override
+  State<FirebaseStartupGate> createState() => _FirebaseStartupGateState();
+}
+
+class _FirebaseStartupGateState extends State<FirebaseStartupGate> {
+  bool _isInitializing = true;
+  bool _isReady = false;
+  Object? _initializationError;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeFirebase();
+  }
+
+  Future<void> _initializeFirebase() async {
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      ).timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      setState(() {
+        _isReady = true;
+        _isInitializing = false;
+      });
+    } catch (error, stackTrace) {
+      debugPrint('Firebase initialization failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      if (!mounted) return;
+      setState(() {
+        _initializationError = error;
+        _isInitializing = false;
+      });
+    }
+  }
+
+  void _retryFirebaseInitialization() {
+    setState(() {
+      _initializationError = null;
+      _isInitializing = true;
+    });
+    _initializeFirebase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isReady) {
+      return const LettuceGuardApp();
+    }
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: _isInitializing
+                ? const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Starting LettuceGuard…'),
+                    ],
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.cloud_off, size: 48),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'LettuceGuard could not start Firebase. Check the '
+                        'phone\'s internet connection and app configuration.',
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      SelectableText(
+                        _initializationError.toString(),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        onPressed: _retryFirebaseInitialization,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class LettuceGuardApp extends StatefulWidget {

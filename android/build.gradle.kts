@@ -1,3 +1,14 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.20")
+    }
+}
+
 allprojects {
     repositories {
         google()
@@ -18,17 +29,17 @@ subprojects {
 
 subprojects {
     if (state.executed) {
-        val android = project.extensions.findByName("android") as? com.android.build.gradle.BaseExtension
+        val android = project.extensions.findByName("android") as? com.android.build.api.dsl.CommonExtension
         android?.apply {
-            buildToolsVersion = "34.0.0"
-            compileSdkVersion(34)
+            buildToolsVersion = "36.0.0"
+            compileSdk = 34
         }
     } else {
         afterEvaluate {
-            val android = project.extensions.findByName("android") as? com.android.build.gradle.BaseExtension
+            val android = project.extensions.findByName("android") as? com.android.build.api.dsl.CommonExtension
             android?.apply {
-                buildToolsVersion = "34.0.0"
-                compileSdkVersion(34)
+                buildToolsVersion = "36.0.0"
+                compileSdk = 34
             }
         }
     }

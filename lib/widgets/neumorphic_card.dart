@@ -33,18 +33,22 @@ class NeumorphicCard extends StatelessWidget {
         color: backgroundColor,
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
-          color: Colors.white.withOpacity(0.6),
+          color: Colors.white.withValues(alpha: 0.6),
           width: 1.2,
         ),
         boxShadow: isInset
             ? [
                 BoxShadow(
-                  color: LettuceGuardColors.neuShadowDark.withOpacity(0.6),
+                  color: LettuceGuardColors.neuShadowDark.withValues(
+                    alpha: 0.6,
+                  ),
                   offset: Offset(distance, distance),
                   blurRadius: blur,
                 ),
                 BoxShadow(
-                  color: LettuceGuardColors.neuShadowLight.withOpacity(0.9),
+                  color: LettuceGuardColors.neuShadowLight.withValues(
+                    alpha: 0.9,
+                  ),
                   offset: Offset(-distance, -distance),
                   blurRadius: blur,
                 ),
