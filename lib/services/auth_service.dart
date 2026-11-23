@@ -15,7 +15,11 @@ class AuthService {
     return UserModel(
       uid: fbUser.uid,
       email: fbUser.email ?? '',
-      displayName: fbUser.displayName ?? (fbUser.email?.contains('@') == true ? fbUser.email!.split('@')[0] : 'Operator'),
+      displayName:
+          fbUser.displayName ??
+          (fbUser.email?.contains('@') == true
+              ? fbUser.email!.split('@')[0]
+              : 'Operator'),
     );
   }
 
@@ -26,7 +30,11 @@ class AuthService {
       return UserModel(
         uid: fbUser.uid,
         email: fbUser.email ?? '',
-        displayName: fbUser.displayName ?? (fbUser.email?.contains('@') == true ? fbUser.email!.split('@')[0] : 'Operator'),
+        displayName:
+            fbUser.displayName ??
+            (fbUser.email?.contains('@') == true
+                ? fbUser.email!.split('@')[0]
+                : 'Operator'),
       );
     });
   }
@@ -34,10 +42,8 @@ class AuthService {
   // Sign In with Email & Password
   Future<UserModel> signInWithEmail(String email, String password) async {
     try {
-      fb_auth.UserCredential credential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      fb_auth.UserCredential credential = await _auth
+          .signInWithEmailAndPassword(email: email, password: password);
 
       final user = credential.user!;
       return UserModel(
@@ -51,13 +57,15 @@ class AuthService {
   }
 
   // Register with Name, Email & Password (saves to Auth, Cloud Firestore & Realtime Database)
-  Future<UserModel> registerWithEmail(String name, String email, String password) async {
+  Future<UserModel> registerWithEmail(
+    String name,
+    String email,
+    String password,
+  ) async {
     try {
       // 1. Create user in Firebase Authentication
-      fb_auth.UserCredential credential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      fb_auth.UserCredential credential = await _auth
+          .createUserWithEmailAndPassword(email: email, password: password);
 
       final user = credential.user!;
 

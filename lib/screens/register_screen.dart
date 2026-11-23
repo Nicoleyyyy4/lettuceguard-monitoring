@@ -65,12 +65,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
         backgroundColor: LettuceGuardColors.neuBackground,
         title: const Row(
           children: [
-            Icon(Icons.shield_outlined, color: LettuceGuardColors.statusError, size: 28),
+            Icon(
+              Icons.shield_outlined,
+              color: LettuceGuardColors.statusError,
+              size: 28,
+            ),
             SizedBox(width: 10),
             Expanded(
               child: Text(
                 'Password Guide',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: LettuceGuardColors.textDark),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: LettuceGuardColors.textDark,
+                ),
               ),
             ),
           ],
@@ -81,7 +89,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: [
             const Text(
               'Your password must satisfy all requirements:',
-              style: TextStyle(fontSize: 13, color: LettuceGuardColors.textDark),
+              style: TextStyle(
+                fontSize: 13,
+                color: LettuceGuardColors.textDark,
+              ),
             ),
             const SizedBox(height: 12),
             ...unmetRules.map(
@@ -90,12 +101,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.cancel, color: LettuceGuardColors.statusError, size: 18),
+                    const Icon(
+                      Icons.cancel,
+                      color: LettuceGuardColors.statusError,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         rule,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: LettuceGuardColors.textDark),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: LettuceGuardColors.textDark,
+                        ),
                       ),
                     ),
                   ],
@@ -109,7 +128,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: LettuceGuardColors.primaryGreen,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () => Navigator.pop(ctx),
             child: const Text('GOT IT'),
@@ -156,7 +177,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Account for $name created successfully! Log in to continue.'),
+          content: Text(
+            'Account for $name created successfully! Log in to continue.',
+          ),
           backgroundColor: LettuceGuardColors.primaryGreen,
         ),
       );
@@ -165,7 +188,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       if (!mounted) return;
 
-      String errorMessage = 'Registration failed. Please check your connection and try again.';
+      String errorMessage =
+          'Registration failed. Please check your connection and try again.';
       final errStr = e.toString().toLowerCase();
 
       if (errStr.contains('email-already-in-use')) {
@@ -175,7 +199,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       } else if (errStr.contains('weak-password')) {
         errorMessage = 'The password provided is too weak.';
       } else if (errStr.contains('permission-denied')) {
-        errorMessage = 'Database permission denied. Check Firebase security rules.';
+        errorMessage =
+            'Database permission denied. Check Firebase security rules.';
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -245,7 +270,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: LettuceGuardColors.accentLightGreen.withValues(alpha: 0.25),
+                color: LettuceGuardColors.accentLightGreen.withValues(
+                  alpha: 0.25,
+                ),
               ),
             ),
           ),
@@ -317,7 +344,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           NeumorphicCard(
                             isInset: true,
                             borderRadius: 16,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
                             distance: 3,
                             blur: 6,
                             child: TextField(
@@ -325,8 +355,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               enabled: !_isLoading,
                               decoration: const InputDecoration(
                                 labelText: 'Full Name',
-                                labelStyle: TextStyle(fontSize: 13, color: LettuceGuardColors.textMuted),
-                                prefixIcon: Icon(Icons.person_outline, color: LettuceGuardColors.primaryGreen),
+                                labelStyle: TextStyle(
+                                  fontSize: 13,
+                                  color: LettuceGuardColors.textMuted,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.person_outline,
+                                  color: LettuceGuardColors.primaryGreen,
+                                ),
                                 border: InputBorder.none,
                               ),
                             ),
@@ -338,7 +374,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           NeumorphicCard(
                             isInset: true,
                             borderRadius: 16,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
                             distance: 3,
                             blur: 6,
                             child: TextField(
@@ -347,8 +386,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               keyboardType: TextInputType.emailAddress,
                               decoration: const InputDecoration(
                                 labelText: 'Email Address',
-                                labelStyle: TextStyle(fontSize: 13, color: LettuceGuardColors.textMuted),
-                                prefixIcon: Icon(Icons.email_outlined, color: LettuceGuardColors.primaryGreen),
+                                labelStyle: TextStyle(
+                                  fontSize: 13,
+                                  color: LettuceGuardColors.textMuted,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.email_outlined,
+                                  color: LettuceGuardColors.primaryGreen,
+                                ),
                                 border: InputBorder.none,
                               ),
                             ),
@@ -360,7 +405,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           NeumorphicCard(
                             isInset: true,
                             borderRadius: 16,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
                             distance: 3,
                             blur: 6,
                             child: TextField(
@@ -377,12 +425,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               decoration: InputDecoration(
                                 labelText: 'Password',
                                 hintText: '8-12 chars, A-Z, 0-9, symbol',
-                                hintStyle: const TextStyle(fontSize: 11, color: Colors.black38),
-                                labelStyle: const TextStyle(fontSize: 13, color: LettuceGuardColors.textMuted),
-                                prefixIcon: const Icon(Icons.lock_outline, color: LettuceGuardColors.primaryGreen),
+                                hintStyle: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.black38,
+                                ),
+                                labelStyle: const TextStyle(
+                                  fontSize: 13,
+                                  color: LettuceGuardColors.textMuted,
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.lock_outline,
+                                  color: LettuceGuardColors.primaryGreen,
+                                ),
                                 suffixIcon: IconButton(
                                   icon: Icon(
-                                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                    _obscurePassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
                                     color: LettuceGuardColors.textMuted,
                                   ),
                                   onPressed: () {
@@ -430,7 +489,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         width: 20,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2.5,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                Colors.white,
+                                              ),
                                         ),
                                       )
                                     : const Text(
@@ -458,7 +520,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           : () {
                               Navigator.pop(context);
                             },
-                      icon: const Icon(Icons.arrow_back, size: 18, color: LettuceGuardColors.primaryGreen),
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        size: 18,
+                        color: LettuceGuardColors.primaryGreen,
+                      ),
                       label: const Text(
                         'Already have an account? Sign In',
                         style: TextStyle(

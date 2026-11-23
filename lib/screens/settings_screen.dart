@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import '../providers/sensor_provider.dart';
 import '../services/auth_service.dart';
 import '../utils/colors.dart';
@@ -273,6 +274,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           },
                         ),
 
+                        DropdownButtonFormField<LiveSensorSource>(
+                          initialValue: provider.liveSource,
+                          decoration: const InputDecoration(
+                            labelText: 'Production live sensor source',
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: LiveSensorSource.firebase,
+                              child: Text('Firebase current snapshot'),
+                            ),
+                            DropdownMenuItem(
+                              value: LiveSensorSource.esp32,
+                              child: Text('ESP32 local HTTP'),
+                            ),
+                          ],
+                          onChanged: (source) {
+                            if (source != null) {
+                              provider.updateLiveSource(source);
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Heat detection requires a fresh sensor timestamp. Missing or repeated timestamps cannot confirm heat or recovery.',
+                          style: TextStyle(fontSize: 11),
+                        ),
+                        if (kDebugMode && provider.isDemoMode) ...[
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Developer demo air-temperature scenarios (simulated only)',
+                          ),
+                          Wrap(
+                            spacing: 8,
+                            children: [24.0, 28.0, 32.0, 36.0]
+                                .map(
+                                  (value) => OutlinedButton(
+                                    onPressed: () =>
+                                        provider.setDemoAirTemperature(value),
+                                    child: Text(
+                                      '${value.toStringAsFixed(0)}\u00b0C',
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        ],
                         const Divider(height: 20),
 
                         TextField(

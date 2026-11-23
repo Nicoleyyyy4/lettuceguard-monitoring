@@ -202,8 +202,10 @@ void processAndSendSensorData(bool isHistorySnapshot) {
   sensorErrors["adcSaturation"] = adcSaturation;
   sensorErrors["phUncalibrated"] = phUncalibrated;
 
-  // Realtime timestamp placeholder or millis offset
-  doc["timestamp"] = millis();
+  // Firebase resolves this to Unix epoch milliseconds for both endpoints.
+  // millis() is MCU uptime and cannot identify historical wall-clock times.
+  JsonObject serverTimestamp = doc.createNestedObject("timestamp");
+  serverTimestamp[".sv"] = "timestamp";
 
   String jsonString;
   serializeJson(doc, jsonString);

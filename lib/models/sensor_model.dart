@@ -11,6 +11,10 @@ class SensorData {
   final double waterLevelCm; // cm (distance from full or depth)
   final double reservoirDepthCm; // cm total height of tank
   final DateTime timestamp;
+  final bool hasValidTimestamp;
+
+  /// Legacy records can use the Firebase push key's creation time.
+  final bool timestampFromHistoryKey;
   final String systemStatus; // OK, WARNING, ERROR
 
   // Hardware sensor error flags
@@ -32,6 +36,8 @@ class SensorData {
     required this.waterLevelCm,
     this.reservoirDepthCm = LettuceGuardConstants.defaultReservoirDepthCm,
     required this.timestamp,
+    this.hasValidTimestamp = true,
+    this.timestampFromHistoryKey = false,
     this.systemStatus = 'OK',
     this.dht22Error = false,
     this.ds18b20Error = false,
@@ -43,47 +49,53 @@ class SensorData {
   });
 
   /// Factory constructor to parse JSON payload received from Firebase Realtime DB
-  factory SensorData.fromJson(Map<String, dynamic> json) {
+  factory SensorData.fromJson(
+    Map<String, dynamic> json, {
+    DateTime? historyKeyTime,
+  }) {
     Map<String, dynamic> errors = {};
     if (json['sensorErrors'] is Map) {
       errors = Map<String, dynamic>.from(json['sensorErrors']);
     }
 
     // Parse water level structure if nested or flat
-    double levelPct = 0.0;
-    double levelCm = 0.0;
+    double levelPct = double.nan;
+    double levelCm = double.nan;
     double depthCm = LettuceGuardConstants.defaultReservoirDepthCm;
 
     if (json['waterLevel'] is Map) {
       final wl = Map<String, dynamic>.from(json['waterLevel']);
-      levelPct = (wl['percentage'] as num?)?.toDouble() ?? 0.0;
-      levelCm = (wl['distanceCm'] as num?)?.toDouble() ?? 0.0;
-      depthCm = (wl['reservoirDepthCm'] as num?)?.toDouble() ?? depthCm;
+      levelPct = parseReading(wl['percentage']);
+      levelCm = parseReading(wl['distanceCm']);
+      depthCm = (wl['reservoirDepthCm'] is num)
+          ? (wl['reservoirDepthCm'] as num).toDouble()
+          : depthCm;
     } else {
-      levelPct = (json['waterLevelPct'] as num?)?.toDouble() ?? 0.0;
-      levelCm = (json['waterLevelCm'] as num?)?.toDouble() ?? 0.0;
-      depthCm = (json['reservoirDepthCm'] as num?)?.toDouble() ?? depthCm;
+      levelPct = parseReading(json['waterLevelPct']);
+      levelCm = parseReading(json['waterLevelCm']);
+      depthCm = (json['reservoirDepthCm'] is num)
+          ? (json['reservoirDepthCm'] as num).toDouble()
+          : depthCm;
     }
 
-    DateTime ts;
-    if (json['timestamp'] is int) {
-      ts = DateTime.fromMillisecondsSinceEpoch(json['timestamp']);
-    } else if (json['timestamp'] is String) {
-      ts = DateTime.tryParse(json['timestamp']) ?? DateTime.now();
-    } else {
-      ts = DateTime.now();
+    final parsedTime = parseTimestamp(json['timestamp']);
+    final ts = parsedTime ?? historyKeyTime;
+    if (!depthCm.isFinite || depthCm <= 0) {
+      depthCm = LettuceGuardConstants.defaultReservoirDepthCm;
     }
 
     return SensorData(
-      airTemperature: (json['airTemperature'] as num?)?.toDouble() ?? 0.0,
-      airHumidity: (json['airHumidity'] as num?)?.toDouble() ?? 0.0,
-      waterTemperature: (json['waterTemperature'] as num?)?.toDouble() ?? 0.0,
-      ph: (json['ph'] as num?)?.toDouble() ?? 7.0,
-      tds: (json['tds'] as num?)?.toDouble() ?? 0.0,
+      airTemperature: parseReading(json['airTemperature']),
+      airHumidity: parseReading(json['airHumidity']),
+      waterTemperature: parseReading(json['waterTemperature']),
+      ph: parseReading(json['ph']),
+      tds: parseReading(json['tds']),
       waterLevelPct: levelPct,
       waterLevelCm: levelCm,
       reservoirDepthCm: depthCm,
-      timestamp: ts,
+      timestamp: ts ?? DateTime.fromMillisecondsSinceEpoch(0),
+      hasValidTimestamp: ts != null,
+      timestampFromHistoryKey: parsedTime == null && historyKeyTime != null,
       systemStatus: (json['systemStatus'] as String?) ?? 'OK',
       dht22Error: (errors['dht22Error'] as bool?) ?? false,
       ds18b20Error: (errors['ds18b20Error'] as bool?) ?? false,
@@ -95,18 +107,49 @@ class SensorData {
     );
   }
 
-  /// Convert SensorData to JSON payload for Firebase Realtime DB
+  /// Read finite numbers without inventing defaults for absent measurements.
+  static double parseReading(Object? value) {
+    final number = value is num ? value.toDouble() : double.tryParse('$value');
+    return number != null && number.isFinite ? number : double.nan;
+  }
+
+  /// Accept Unix milliseconds, Unix seconds, and ISO dates; reject MCU uptime.
+  static DateTime? parseTimestamp(Object? value) {
+    final numeric = value is num ? value : num.tryParse('$value');
+    DateTime? result;
+    if (numeric != null && numeric.isFinite) {
+      final ms = numeric < 100000000000 ? numeric * 1000 : numeric;
+      if (ms < 946684800000 || ms >= 4102444800000) return null;
+      result = DateTime.fromMillisecondsSinceEpoch(ms.round());
+    } else if (value is String) {
+      result = DateTime.tryParse(value);
+    }
+    if (result == null || result.year < 2000 || result.year >= 2100) {
+      return null;
+    }
+    return result.toLocal();
+  }
+
+  /// Keep double fields compatible with existing consumers; missing is not zero.
+  bool get hasValidTds => !tdsError && tds.isFinite && tds >= 0;
+  bool get hasValidAirTemperature =>
+      !dht22Error &&
+      airTemperature.isFinite &&
+      airTemperature >= -40 &&
+      airTemperature <= 80;
+
+  /// Convert readings to the existing Firebase payload; missing numbers are null.
   Map<String, dynamic> toJson() {
     return {
-      'airTemperature': airTemperature,
-      'airHumidity': airHumidity,
-      'waterTemperature': waterTemperature,
-      'ph': ph,
-      'tds': tds,
+      'airTemperature': airTemperature.isFinite ? airTemperature : null,
+      'airHumidity': airHumidity.isFinite ? airHumidity : null,
+      'waterTemperature': waterTemperature.isFinite ? waterTemperature : null,
+      'ph': ph.isFinite ? ph : null,
+      'tds': tds.isFinite ? tds : null,
       'waterLevel': {
-        'percentage': waterLevelPct,
-        'distanceCm': waterLevelCm,
-        'reservoirDepthCm': reservoirDepthCm,
+        'percentage': waterLevelPct.isFinite ? waterLevelPct : null,
+        'distanceCm': waterLevelCm.isFinite ? waterLevelCm : null,
+        'reservoirDepthCm': reservoirDepthCm.isFinite ? reservoirDepthCm : null,
       },
       'systemStatus': calculatedStatus,
       'sensorErrors': {
@@ -118,7 +161,7 @@ class SensorData {
         'adcSaturation': adcSaturation,
         'phUncalibrated': phUncalibrated,
       },
-      'timestamp': timestamp.millisecondsSinceEpoch,
+      'timestamp': hasValidTimestamp ? timestamp.millisecondsSinceEpoch : null,
     };
   }
 
@@ -166,7 +209,7 @@ class SensorData {
       phUncalibrated;
 
   bool get isAirTempOutOfRange =>
-      !dht22Error &&
+      hasValidAirTemperature &&
       (airTemperature < LettuceGuardConstants.minAirTemp ||
           airTemperature > LettuceGuardConstants.maxAirTemp);
 
@@ -186,7 +229,7 @@ class SensorData {
       (ph < LettuceGuardConstants.minPh || ph > LettuceGuardConstants.maxPh);
 
   bool get isTdsOutOfRange =>
-      !tdsError &&
+      hasValidTds &&
       (tds < LettuceGuardConstants.minTds ||
           tds > LettuceGuardConstants.maxTds);
 

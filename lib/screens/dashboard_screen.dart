@@ -3,11 +3,13 @@ import '../models/sensor_model.dart';
 import '../providers/sensor_provider.dart';
 import '../services/auth_service.dart';
 import '../utils/colors.dart';
+import '../utils/constants.dart';
 import '../utils/routes.dart';
 import '../widgets/sensor_card.dart';
 import '../widgets/water_level_card.dart';
 import '../widgets/status_card.dart';
 import '../widgets/bottom_nav.dart';
+import '../widgets/temperature_alert_banner.dart';
 import 'history_screen.dart';
 import 'alerts_screen.dart';
 import 'settings_screen.dart';
@@ -35,7 +37,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text('Sign Out'),
           ],
         ),
-        content: const Text('Are you sure you want to log out of LettuceGuard?'),
+        content: const Text(
+          'Are you sure you want to log out of LettuceGuard?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -45,7 +49,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: LettuceGuardColors.statusError,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('LOGOUT'),
@@ -78,10 +84,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: provider.isDarkMode ? const Color(0xFF121B14) : LettuceGuardColors.background,
+      backgroundColor: provider.isDarkMode
+          ? const Color(0xFF121B14)
+          : LettuceGuardColors.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: provider.isDarkMode ? const Color(0xFF1B2A1E) : LettuceGuardColors.primaryGreen,
+        backgroundColor: provider.isDarkMode
+            ? const Color(0xFF1B2A1E)
+            : LettuceGuardColors.primaryGreen,
         foregroundColor: Colors.white,
         centerTitle: false,
         title: const Row(
@@ -107,10 +117,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           // Theme Light / Dark Mode Toggle
           IconButton(
             icon: Icon(
-              provider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              provider.isDarkMode
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
               color: Colors.white,
             ),
-            tooltip: provider.isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme',
+            tooltip: provider.isDarkMode
+                ? 'Switch to Light Theme'
+                : 'Switch to Dark Theme',
             onPressed: () {
               provider.toggleThemeMode();
             },
@@ -119,17 +133,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
           // Simulation / Live Indicator
           IconButton(
             icon: Icon(
-              provider.isDemoMode ? Icons.science_rounded : Icons.cloud_done_rounded,
+              provider.isDemoMode
+                  ? Icons.science_rounded
+                  : Icons.cloud_done_rounded,
               color: Colors.white,
             ),
-            tooltip: provider.isDemoMode ? 'Demo / Simulation Mode' : 'Firebase Live Mode',
+            tooltip: provider.isDemoMode
+                ? 'Demo / Simulation Mode'
+                : 'Production sensor readings',
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
                     provider.isDemoMode
                         ? 'Running in Demo / Hardware Simulation Mode'
-                        : 'Connected to Firebase Realtime Database: ${provider.firebaseUrl}',
+                        : 'Production mode. Firebase history URL: ${provider.firebaseUrl}',
                   ),
                   duration: const Duration(seconds: 2),
                 ),
@@ -146,10 +164,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
 
-      body: IndexedStack(
-        index: _currentNavIndex,
-        children: pages,
-      ),
+      body: IndexedStack(index: _currentNavIndex, children: pages),
 
       bottomNavigationBar: LettuceGuardBottomNav(
         currentIndex: _currentNavIndex,
@@ -163,14 +178,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildLiveDashboardView(BuildContext context, SensorProvider provider) {
+  Widget _buildLiveDashboardView(
+    BuildContext context,
+    SensorProvider provider,
+  ) {
     final data = provider.currentData;
+    if (!provider.isDemoMode && !data.hasValidTimestamp) {
+      return const Column(
+        children: [
+          TemperatureAlertBanner(),
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'Waiting for live ESP32 readings. Check the device connection.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
     final currentUser = _authService.currentUser;
     final userName = currentUser?.displayName.isNotEmpty == true
         ? currentUser!.displayName
         : (currentUser?.email.contains('@') == true
-            ? currentUser!.email.split('@')[0]
-            : 'Operator');
+              ? currentUser!.email.split('@')[0]
+              : 'Operator');
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -178,6 +214,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const TemperatureAlertBanner(),
           // 1. User Greeting Greeting Banner
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -212,7 +249,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: provider.isDarkMode ? Colors.white : LettuceGuardColors.textDark,
+                          color: provider.isDarkMode
+                              ? Colors.white
+                              : LettuceGuardColors.textDark,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -258,8 +297,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.warning_amber_rounded,
-                      color: LettuceGuardColors.statusError, size: 26),
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: LettuceGuardColors.statusError,
+                    size: 26,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -277,7 +319,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           _getPrimaryErrorMessage(data),
                           style: TextStyle(
                             fontSize: 11,
-                            color: provider.isDarkMode ? Colors.white70 : LettuceGuardColors.textDark,
+                            color: provider.isDarkMode
+                                ? Colors.white70
+                                : LettuceGuardColors.textDark,
                           ),
                         ),
                       ],
@@ -289,10 +333,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         _currentNavIndex = 2; // Go to Alerts
                       });
                     },
-                    child: const Text('VIEW',
-                        style: TextStyle(
-                            color: LettuceGuardColors.statusError,
-                            fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'VIEW',
+                      style: TextStyle(
+                        color: LettuceGuardColors.statusError,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -305,7 +352,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: provider.isDarkMode ? Colors.white : LettuceGuardColors.textDark,
+              color: provider.isDarkMode
+                  ? Colors.white
+                  : LettuceGuardColors.textDark,
             ),
           ),
           const SizedBox(height: 12),
@@ -322,11 +371,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // Air Temperature (DHT22)
               SensorCard(
                 title: 'Air Temperature',
-                value: data.airTemperature.toStringAsFixed(1),
+                value: data.hasValidAirTemperature
+                    ? data.airTemperature.toStringAsFixed(1)
+                    : 'N/A',
                 unit: '°C',
                 icon: Icons.thermostat,
                 themeColor: LettuceGuardColors.airTempColor,
-                isError: data.dht22Error,
+                isError: !data.hasValidAirTemperature,
                 isWarning: data.isAirTempOutOfRange,
                 targetRange: '18 - 26°C',
                 alertMessage: 'DHT22 SENSOR ERROR',
@@ -376,13 +427,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // Total Dissolved Solids / EC
               SensorCard(
                 title: 'TDS (Nutrient)',
-                value: data.tds.toStringAsFixed(0),
+                value: data.hasValidTds ? data.tds.toStringAsFixed(0) : 'N/A',
                 unit: 'ppm',
                 icon: Icons.bolt,
                 themeColor: LettuceGuardColors.tdsColor,
-                isError: data.tdsError,
+                isError: !data.hasValidTds,
                 isWarning: data.isTdsOutOfRange,
-                targetRange: '560 - 840 ppm',
+                targetRange:
+                    '${LettuceGuardConstants.minTds.toStringAsFixed(0)} - ${LettuceGuardConstants.maxTds.toStringAsFixed(0)} ppm',
                 alertMessage: 'TDS SENSOR ERROR',
               ),
 
@@ -408,7 +460,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             percentage: data.waterLevelPct,
             distanceCm: data.waterLevelCm,
             reservoirDepthCm: data.reservoirDepthCm,
-            isError: data.ultrasonicError,
+            isError:
+                data.ultrasonicError ||
+                !data.waterLevelPct.isFinite ||
+                !data.waterLevelCm.isFinite,
             isLow: data.isWaterLevelLow,
           ),
         ],
@@ -421,6 +476,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (data.ds18b20Error) return 'DS18B20 water temp sensor error.';
     if (data.phError) return 'pH sensor reading failed or disconnected.';
     if (data.ultrasonicError) return 'HC-SR04 ultrasonic sensor timeout.';
+    if (!data.hasValidTds) return 'TDS reading unavailable or sensor error.';
     if (data.adcSaturation) return 'ESP32 ADC saturation detected.';
     return 'Hardware diagnostic required.';
   }

@@ -3,7 +3,9 @@ import 'package:encrypt/encrypt.dart' as encrypt;
 class EncryptionService {
   // TANDAAN: Ang key ay dapat exactly 32 characters para sa AES-256
   static final _iv = encrypt.IV.fromLength(16);
-  static final _key = encrypt.Key.fromUtf8('lettuceguardsecurekey32byteslong!!'); // 32 chars
+  static final _key = encrypt.Key.fromUtf8(
+    'lettuceguardsecurekey32byteslong!!',
+  ); // 32 chars
 
   // Pangkontra o pang-encrypt ng data bago i-save sa Firebase
   static String encryptData(String plainText) {

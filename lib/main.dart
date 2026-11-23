@@ -11,6 +11,7 @@ import 'screens/alerts_screen.dart';
 import 'screens/settings_screen.dart';
 import 'utils/colors.dart';
 import 'utils/routes.dart';
+import 'widgets/temperature_alert_host.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -123,6 +124,7 @@ class LettuceGuardApp extends StatefulWidget {
 
 class _LettuceGuardAppState extends State<LettuceGuardApp> {
   late final SensorProvider _sensorProvider;
+  final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -146,6 +148,12 @@ class _LettuceGuardAppState extends State<LettuceGuardApp> {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'LettuceGuard',
+            navigatorKey: _navigatorKey,
+            builder: (context, child) => TemperatureAlertHost(
+              provider: _sensorProvider,
+              navigatorKey: _navigatorKey,
+              child: child!,
+            ),
             themeMode: _sensorProvider.themeMode,
             theme: ThemeData(
               useMaterial3: true,

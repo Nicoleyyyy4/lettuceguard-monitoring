@@ -25,7 +25,9 @@ class MockSensorService {
   double baseTds = 720.0;
   double baseWaterLevelPct = 85.0;
 
-  Stream<SensorData> getSensorStream({Duration interval = const Duration(seconds: 2)}) {
+  Stream<SensorData> getSensorStream({
+    Duration interval = const Duration(seconds: 2),
+  }) {
     _controller?.close();
     _controller = StreamController<SensorData>.broadcast();
 
@@ -34,22 +36,40 @@ class MockSensorService {
       _ticks++;
 
       // Create natural oscillating ambient variations
-      final airTempNoise = sin(_ticks * 0.1) * 0.8 + (_random.nextDouble() * 0.2 - 0.1);
-      final humidityNoise = cos(_ticks * 0.08) * 2.0 + (_random.nextDouble() * 0.5 - 0.25);
-      final waterTempNoise = sin(_ticks * 0.05) * 0.4 + (_random.nextDouble() * 0.1 - 0.05);
-      final phNoise = sin(_ticks * 0.12) * 0.15 + (_random.nextDouble() * 0.04 - 0.02);
-      final tdsNoise = cos(_ticks * 0.05) * 15.0 + (_random.nextDouble() * 5.0 - 2.5);
-      final waterLevelNoise = -(_ticks * 0.05) % 30.0; // gradual slow evaporation cycle
+      final airTempNoise =
+          sin(_ticks * 0.1) * 0.8 + (_random.nextDouble() * 0.2 - 0.1);
+      final humidityNoise =
+          cos(_ticks * 0.08) * 2.0 + (_random.nextDouble() * 0.5 - 0.25);
+      final waterTempNoise =
+          sin(_ticks * 0.05) * 0.4 + (_random.nextDouble() * 0.1 - 0.05);
+      final phNoise =
+          sin(_ticks * 0.12) * 0.15 + (_random.nextDouble() * 0.04 - 0.02);
+      final tdsNoise =
+          cos(_ticks * 0.05) * 15.0 + (_random.nextDouble() * 5.0 - 2.5);
+      final waterLevelNoise =
+          -(_ticks * 0.05) % 30.0; // gradual slow evaporation cycle
 
-      final currentAirTemp = double.parse((baseAirTemp + airTempNoise).toStringAsFixed(1));
-      final currentHumidity = double.parse((baseHumidity + humidityNoise).toStringAsFixed(1));
-      final currentWaterTemp = double.parse((baseWaterTemp + waterTempNoise).toStringAsFixed(1));
+      final currentAirTemp = double.parse(
+        (baseAirTemp + airTempNoise).toStringAsFixed(1),
+      );
+      final currentHumidity = double.parse(
+        (baseHumidity + humidityNoise).toStringAsFixed(1),
+      );
+      final currentWaterTemp = double.parse(
+        (baseWaterTemp + waterTempNoise).toStringAsFixed(1),
+      );
       final currentPh = double.parse((basePh + phNoise).toStringAsFixed(2));
       final currentTds = double.parse((baseTds + tdsNoise).toStringAsFixed(0));
-      final currentLevelPct = double.parse((baseWaterLevelPct + waterLevelNoise).clamp(10.0, 100.0).toStringAsFixed(1));
+      final currentLevelPct = double.parse(
+        (baseWaterLevelPct + waterLevelNoise)
+            .clamp(10.0, 100.0)
+            .toStringAsFixed(1),
+      );
 
       // Calculate distance in cm (30 cm reservoir depth)
-      final currentLevelCm = double.parse(((100.0 - currentLevelPct) * 0.3).toStringAsFixed(1));
+      final currentLevelCm = double.parse(
+        ((100.0 - currentLevelPct) * 0.3).toStringAsFixed(1),
+      );
 
       final data = SensorData(
         airTemperature: forceDht22Error ? -999.0 : currentAirTemp,
@@ -85,8 +105,10 @@ class MockSensorService {
     for (int i = count; i >= 0; i--) {
       final time = now.subtract(Duration(minutes: i * 30));
       final airTemp = 22.0 + sin(i * 0.3) * 2.5 + (_random.nextDouble() - 0.5);
-      final humidity = 60.0 + cos(i * 0.3) * 5.0 + (_random.nextDouble() * 2 - 1);
-      final waterTemp = 19.5 + sin(i * 0.2) * 1.2 + (_random.nextDouble() - 0.5);
+      final humidity =
+          60.0 + cos(i * 0.3) * 5.0 + (_random.nextDouble() * 2 - 1);
+      final waterTemp =
+          19.5 + sin(i * 0.2) * 1.2 + (_random.nextDouble() - 0.5);
       final ph = 6.0 + sin(i * 0.4) * 0.3 + (_random.nextDouble() * 0.1 - 0.05);
       final tds = 700.0 + cos(i * 0.2) * 40.0;
       final levelPct = (88.0 - (i * 0.5)).clamp(30.0, 95.0);
@@ -99,7 +121,9 @@ class MockSensorService {
           ph: double.parse(ph.toStringAsFixed(2)),
           tds: double.parse(tds.toStringAsFixed(0)),
           waterLevelPct: double.parse(levelPct.toStringAsFixed(1)),
-          waterLevelCm: double.parse(((100.0 - levelPct) * 0.3).toStringAsFixed(1)),
+          waterLevelCm: double.parse(
+            ((100.0 - levelPct) * 0.3).toStringAsFixed(1),
+          ),
           reservoirDepthCm: 30.0,
           timestamp: time,
         ),
@@ -108,8 +132,12 @@ class MockSensorService {
     return history;
   }
 
-  void dispose() {
+  void stop() {
     _timer?.cancel();
     _controller?.close();
+    _timer = null;
+    _controller = null;
   }
+
+  void dispose() => stop();
 }

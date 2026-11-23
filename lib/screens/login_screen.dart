@@ -92,17 +92,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => const DashboardScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
     } catch (e) {
       if (!mounted) return;
 
-      String errorMessage = 'Sign in failed. Please check credentials and connection.';
+      String errorMessage =
+          'Sign in failed. Please check credentials and connection.';
       final errStr = e.toString().toLowerCase();
 
-      if (errStr.contains('user-not-found') || errStr.contains('wrong-password') || errStr.contains('invalid-credential')) {
+      if (errStr.contains('user-not-found') ||
+          errStr.contains('wrong-password') ||
+          errStr.contains('invalid-credential')) {
         errorMessage = 'Invalid email or password.';
       } else if (errStr.contains('invalid-email')) {
         errorMessage = 'Please enter a valid email address.';
@@ -168,7 +169,9 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 200,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: LettuceGuardColors.accentLightGreen.withValues(alpha: 0.2),
+                color: LettuceGuardColors.accentLightGreen.withValues(
+                  alpha: 0.2,
+                ),
               ),
             ),
           ),
@@ -177,7 +180,10 @@ class _LoginScreenState extends State<LoginScreen> {
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -251,7 +257,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           NeumorphicCard(
                             isInset: true,
                             borderRadius: 16,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
                             distance: 3,
                             blur: 6,
                             child: TextField(
@@ -260,8 +269,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               keyboardType: TextInputType.emailAddress,
                               decoration: const InputDecoration(
                                 labelText: 'Email Address',
-                                labelStyle: TextStyle(fontSize: 13, color: LettuceGuardColors.textMuted),
-                                prefixIcon: Icon(Icons.email_outlined, color: LettuceGuardColors.primaryGreen),
+                                labelStyle: TextStyle(
+                                  fontSize: 13,
+                                  color: LettuceGuardColors.textMuted,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.email_outlined,
+                                  color: LettuceGuardColors.primaryGreen,
+                                ),
                                 border: InputBorder.none,
                               ),
                             ),
@@ -273,7 +288,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           NeumorphicCard(
                             isInset: true,
                             borderRadius: 16,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
                             distance: 3,
                             blur: 6,
                             child: TextField(
@@ -289,11 +307,19 @@ class _LoginScreenState extends State<LoginScreen> {
                               },
                               decoration: InputDecoration(
                                 labelText: 'Password',
-                                labelStyle: const TextStyle(fontSize: 13, color: LettuceGuardColors.textMuted),
-                                prefixIcon: const Icon(Icons.lock_outline, color: LettuceGuardColors.primaryGreen),
+                                labelStyle: const TextStyle(
+                                  fontSize: 13,
+                                  color: LettuceGuardColors.textMuted,
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.lock_outline,
+                                  color: LettuceGuardColors.primaryGreen,
+                                ),
                                 suffixIcon: IconButton(
                                   icon: Icon(
-                                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                    _obscurePassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
                                     color: LettuceGuardColors.textMuted,
                                   ),
                                   onPressed: () {
@@ -341,11 +367,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                         width: 20,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2.5,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                Colors.white,
+                                              ),
                                         ),
                                       )
                                     : const Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           Text(
                                             'LOGIN TO SYSTEM',
@@ -357,7 +387,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                             ),
                                           ),
                                           SizedBox(width: 8),
-                                          Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+                                          Icon(
+                                            Icons.arrow_forward_rounded,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
                                         ],
                                       ),
                               ),
@@ -383,7 +417,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                       child: NeumorphicCard(
                         borderRadius: 20,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         distance: 4,
                         blur: 8,
                         child: Wrap(

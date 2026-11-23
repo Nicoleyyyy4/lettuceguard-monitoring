@@ -9,6 +9,15 @@ class LettuceGuardConstants {
   static const double minAirTemp = 18.0; // °C
   static const double maxAirTemp = 26.0; // °C
 
+  // LettuceGuard application configuration, not universal biological limits.
+  static const double criticalAirTemp = 30.0;
+  static const double extremeAirTemp = 35.0;
+  static const int temperatureConfirmationCount = 3;
+  static const int temperatureRecoveryCount = 3;
+  static const double temperatureRecoveryHysteresis = 1.0;
+  static const Duration temperatureMaxAge = Duration(seconds: 30);
+  static const Duration temperatureMaxSampleGap = Duration(seconds: 12);
+
   static const double minAirHumidity = 50.0; // %
   static const double maxAirHumidity = 70.0; // %
 
@@ -29,7 +38,8 @@ class LettuceGuardConstants {
   static const String errDs18b20 = 'DS18B20 SENSOR ERROR';
   static const String errPhSensor = 'pH SENSOR UNCALIBRATED / DISCONNECTED';
   static const String errUltrasonic = 'HC-SR04 ULTRASONIC SENSOR ERROR';
-  static const String errAdcSaturation = 'ADC SATURATION DETECTED (Out of Range)';
+  static const String errAdcSaturation =
+      'ADC SATURATION DETECTED (Out of Range)';
   static const String errTdsSensor = 'TDS / EC METER SENSOR ERROR';
 
   // Firebase Realtime DB Defaults (Updated to match lettuceguard-app project)
