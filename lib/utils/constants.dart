@@ -23,6 +23,9 @@ class LettuceGuardConstants {
 
   static const double minWaterTemp = 18.0; // °C
   static const double maxWaterTemp = 22.0; // °C
+  static const double waterPumpStartTemp = 23.0; // °C
+  static const double waterPumpStopTemp = 22.0; // °C
+  static const double waterPumpMinimumLevelPct = 25.0; // %
 
   static const double minPh = 5.5;
   static const double maxPh = 6.5;
@@ -42,8 +45,8 @@ class LettuceGuardConstants {
       'ADC SATURATION DETECTED (Out of Range)';
   static const String errTdsSensor = 'TDS / EC METER SENSOR ERROR';
 
-  // Firebase Realtime DB Defaults (Updated to match lettuceguard-app project)
+  // Firebase Realtime DB defaults for the active LettuceGuard project.
   static const String defaultDeviceId = 'lettuceguard_node_01';
   static const String defaultFirebaseUrl =
-      'https://lettuceguard-app-default-rtdb.firebaseio.com';
+      'https://lettuceguard-bd1f4-default-rtdb.firebaseio.com';
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import '../services/auth_service.dart';
 import '../utils/colors.dart';
 import '../widgets/neumorphic_card.dart';
@@ -19,7 +20,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
   bool _obscurePassword = true;
-  String? _passwordErrorText;
 
   @override
   void dispose() {
@@ -28,38 +28,10 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  /// Strict Password Validation Rule:
-  /// - Length: 8 - 12 characters
-  /// - At least 1 uppercase letter (A-Z)
-  /// - At least 1 number (0-9)
-  /// - At least 1 special character (!@#$%^&*(),.?":{}|<>)
-  String? _validatePassword(String password) {
-    if (password.isEmpty) {
-      return 'Password is required.';
-    }
-    if (password.length < 8 || password.length > 12) {
-      return 'Password must be 8-12 characters long.';
-    }
-    if (!RegExp(r'[A-Z]').hasMatch(password)) {
-      return 'Must contain at least 1 uppercase letter (A-Z).';
-    }
-    if (!RegExp(r'[0-9]').hasMatch(password)) {
-      return 'Must contain at least 1 number (0-9).';
-    }
-    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) {
-      return 'Must contain at least 1 special character.';
-    }
-    return null;
-  }
-
   Future<void> _handleLogin() async {
     final email = emailController.text.trim();
-    final password = passwordController.text.trim();
-
-    final passError = _validatePassword(password);
-    setState(() {
-      _passwordErrorText = passError;
-    });
+    // Passwords are opaque credentials; preserve whitespace exactly as entered.
+    final password = passwordController.text;
 
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -71,10 +43,10 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    if (passError != null) {
+    if (password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(passError),
+        const SnackBar(
+          content: Text('Please enter your password.'),
           backgroundColor: LettuceGuardColors.statusError,
         ),
       );
@@ -97,19 +69,25 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (!mounted) return;
 
-      String errorMessage =
-          'Sign in failed. Please check credentials and connection.';
-      final errStr = e.toString().toLowerCase();
-
-      if (errStr.contains('user-not-found') ||
-          errStr.contains('wrong-password') ||
-          errStr.contains('invalid-credential')) {
-        errorMessage = 'Invalid email or password.';
-      } else if (errStr.contains('invalid-email')) {
-        errorMessage = 'Please enter a valid email address.';
-      } else if (errStr.contains('user-disabled')) {
-        errorMessage = 'This account has been disabled.';
-      }
+      final errorMessage = switch (e) {
+        fb_auth.FirebaseAuthException(:final code, :final message) => switch (code) {
+          'user-not-found' || 'wrong-password' || 'invalid-credential' =>
+            'Firebase rejected this email or password. Check that the account '
+                'exists in LettuceGuard’s Firebase project.',
+          'invalid-email' => 'Please enter a valid email address.',
+          'user-disabled' => 'This account has been disabled.',
+          'network-request-failed' =>
+            'Could not reach Firebase. Check the phone’s internet connection.',
+          'operation-not-allowed' =>
+            'Email and password sign-in is not enabled for this Firebase project.',
+          'too-many-requests' =>
+            'Too many sign-in attempts. Wait a while, then try again.',
+          'invalid-api-key' =>
+            'Firebase rejected this app’s API key. Check the Android Firebase configuration.',
+          _ => message ?? 'Sign in failed (Firebase error: $code).',
+        },
+        _ => 'Sign in failed. Please try again.',
+      };
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -298,13 +276,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               controller: passwordController,
                               enabled: !_isLoading,
                               obscureText: _obscurePassword,
-                              onChanged: (val) {
-                                if (_passwordErrorText != null) {
-                                  setState(() {
-                                    _passwordErrorText = _validatePassword(val);
-                                  });
-                                }
-                              },
                               decoration: InputDecoration(
                                 labelText: 'Password',
                                 labelStyle: const TextStyle(
@@ -332,23 +303,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ),
-
-                          // Inline Password Rule Error / Warning Text
-                          if (_passwordErrorText != null) ...[
-                            const SizedBox(height: 6),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8),
-                              child: Text(
-                                _passwordErrorText!,
-                                style: const TextStyle(
-                                  color: LettuceGuardColors.statusError,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-
                           const SizedBox(height: 26),
 
                           // Neumorphic Primary Action Button

@@ -111,10 +111,15 @@ class SensorProvider extends ChangeNotifier {
 
   LiveSensorSource get liveSource => _liveSource;
   TemperatureLevel get temperatureLevel => _temperature.level;
-  AlertModel? get activeTemperatureAlert =>
-      _temperature.latestEvent?.isResolved == false
-      ? _temperature.latestEvent
-      : null;
+  AlertModel? get activeTemperatureAlert {
+    final active =
+        _alerts
+            .where((alert) => alert.isTemperatureAlert && !alert.isResolved)
+            .toList()
+          ..sort((a, b) => b.severity.index.compareTo(a.severity.index));
+    return active.firstOrNull;
+  }
+
   String? get temperatureSyncError => _temperatureSyncError;
   bool get temperatureReadyForPopup =>
       _isDemoMode || _temperatureRestored || _temperatureSyncError != null;
@@ -158,6 +163,25 @@ class SensorProvider extends ChangeNotifier {
   }
 
   void acknowledgeTemperatureAlert(String id, {int? priority}) {
+    final waterIndex = _alerts.indexWhere(
+      (alert) => alert.id == id && alert.isWaterTemperatureAlert,
+    );
+    if (waterIndex >= 0) {
+      final alert = _alerts[waterIndex];
+      if (!alert.isAcknowledged) {
+        _alerts[waterIndex] = alert.copyWith(
+          isAcknowledged: true,
+          acknowledgedAt: _clock(),
+          revision: alert.revision + 1,
+          transitions: [
+            ...alert.transitions,
+            {'kind': 'acknowledged', 'at': _clock().millisecondsSinceEpoch},
+          ],
+        );
+      }
+      notifyListeners();
+      return;
+    }
     _applyTemperature(
       TemperatureOperation.action('acknowledge', id, priority, _clock()),
     );
@@ -165,6 +189,29 @@ class SensorProvider extends ChangeNotifier {
   }
 
   void markTemperaturePopupPresented(String id, int priority) {
+    final waterIndex = _alerts.indexWhere(
+      (alert) => alert.id == id && alert.isWaterTemperatureAlert,
+    );
+    if (waterIndex >= 0) {
+      final alert = _alerts[waterIndex];
+      if (priority > alert.presentedPriority) {
+        final at = _clock();
+        _alerts[waterIndex] = alert.copyWith(
+          presentedPriority: priority,
+          revision: alert.revision + 1,
+          transitions: [
+            ...alert.transitions,
+            {
+              'kind': 'presented',
+              'priority': priority,
+              'at': at.millisecondsSinceEpoch,
+            },
+          ],
+        );
+      }
+      notifyListeners();
+      return;
+    }
     _applyTemperature(
       TemperatureOperation.action('presented', id, priority, _clock()),
     );
@@ -544,7 +591,9 @@ class SensorProvider extends ChangeNotifier {
       _resolveAlert('warn_ph_range');
     }
 
-    if (data.isWaterTempOutOfRange) {
+    _updateWaterTemperatureAlert(data);
+
+    if (data.isWaterTempOutOfRange && data.waterTemperature < 23.0) {
       _addAlertIfNotExist(
         id: 'warn_wtemp_range',
         title: 'Water Temp Warning',
@@ -568,6 +617,111 @@ class SensorProvider extends ChangeNotifier {
       );
     } else {
       _resolveAlert('warn_water_low');
+    }
+  }
+
+  void _updateWaterTemperatureAlert(SensorData data) {
+    final now = _clock();
+    if (data.ds18b20Error ||
+        !data.waterTemperature.isFinite ||
+        !data.hasValidTimestamp ||
+        data.timestampFromHistoryKey ||
+        data.timestamp.difference(now) > const Duration(seconds: 5) ||
+        now.difference(data.timestamp) >
+            LettuceGuardConstants.temperatureMaxAge) {
+      return;
+    }
+    final activeIndex = _alerts.indexWhere(
+      (alert) => alert.isWaterTemperatureAlert && !alert.isResolved,
+    );
+
+    if (data.waterTemperature >= LettuceGuardConstants.waterPumpStartTemp) {
+      if (activeIndex >= 0) return;
+      final at = data.timestamp;
+      final pumpMessage = data.waterPumpActive
+          ? 'The automatic circulation pump is running and will stop at 22°C.'
+          : switch (data.waterPumpReason) {
+              'low_or_unavailable_water_level' =>
+                'Pump is safely inhibited because the water level is low or unavailable.',
+              'water_temperature_sensor_error' =>
+                'Pump is off because the water temperature sensor reported an error.',
+              'status_unavailable' =>
+                'Pump status is unavailable. Update the ESP32 firmware to enable automatic control.',
+              _ => 'Check the circulation pump and relay connection.',
+            };
+      final id = 'water_temperature_${at.millisecondsSinceEpoch}';
+      _alerts.insert(
+        0,
+        AlertModel(
+          id: id,
+          title: 'WATER TEMPERATURE HIGH',
+          message:
+              'Nutrient water reached ${data.waterTemperature.toStringAsFixed(1)}°C (alert at ${LettuceGuardConstants.waterPumpStartTemp.toStringAsFixed(0)}°C). $pumpMessage',
+          sensorSource: 'DS18B20',
+          severity: AlertSeverity.critical,
+          timestamp: at,
+          deviceId: _firebaseService.deviceId,
+          alertType: 'water_temperature',
+          temperatureLevel: TemperatureLevel.critical,
+          measuredTemperature: data.waterTemperature,
+          configuredThreshold: LettuceGuardConstants.waterPumpStartTemp,
+          readingTimestamp: at,
+          isDemo: _isDemoMode,
+          revision: 1,
+          peakPriority: TemperatureLevel.critical.priority,
+          transitions: [
+            {
+              'kind': 'started',
+              'level': 'critical',
+              'temperature': data.waterTemperature,
+              'threshold': LettuceGuardConstants.waterPumpStartTemp,
+              'readingTimestamp': at.millisecondsSinceEpoch,
+              'at': at.millisecondsSinceEpoch,
+            },
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (data.waterTemperature <= LettuceGuardConstants.waterPumpStopTemp &&
+        activeIndex >= 0) {
+      final alert = _alerts[activeIndex];
+      final at = data.timestamp;
+      _alerts[activeIndex] = AlertModel(
+        id: alert.id,
+        title: 'WATER TEMPERATURE RECOVERED',
+        message:
+            'Nutrient water cooled to ${data.waterTemperature.toStringAsFixed(1)}°C. Automatic pump is ${data.waterPumpActive ? 'still running' : 'off'}.',
+        sensorSource: alert.sensorSource,
+        severity: AlertSeverity.info,
+        timestamp: alert.timestamp,
+        isResolved: true,
+        deviceId: alert.deviceId,
+        alertType: alert.alertType,
+        temperatureLevel: TemperatureLevel.normal,
+        measuredTemperature: data.waterTemperature,
+        configuredThreshold: LettuceGuardConstants.waterPumpStopTemp,
+        readingTimestamp: at,
+        isAcknowledged: alert.isAcknowledged,
+        acknowledgedAt: alert.acknowledgedAt,
+        resolvedAt: at,
+        isDemo: alert.isDemo,
+        revision: alert.revision + 1,
+        peakPriority: alert.peakPriority,
+        presentedPriority: alert.presentedPriority,
+        transitions: [
+          ...alert.transitions,
+          {
+            'kind': 'resolved',
+            'level': 'normal',
+            'temperature': data.waterTemperature,
+            'threshold': LettuceGuardConstants.waterPumpStopTemp,
+            'readingTimestamp': at.millisecondsSinceEpoch,
+            'at': at.millisecondsSinceEpoch,
+          },
+        ],
+      );
     }
   }
 
@@ -657,6 +811,19 @@ class SensorProvider extends ChangeNotifier {
       throw ArgumentError.value(value);
     }
     _mockService.baseAirTemp = value;
+    notifyListeners();
+  }
+
+  void setDemoWaterTemperature(double value) {
+    if (!_isDemoMode) {
+      throw StateError(
+        'Temperature simulation is available only in demo mode.',
+      );
+    }
+    if (!value.isFinite || value < -55 || value > 125) {
+      throw ArgumentError.value(value);
+    }
+    _mockService.baseWaterTemp = value;
     notifyListeners();
   }
 

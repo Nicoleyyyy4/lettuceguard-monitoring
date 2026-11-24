@@ -5,6 +5,7 @@ import '../utils/colors.dart';
 import '../widgets/temperature_alert_banner.dart';
 import '../models/chart_parameter.dart' show historyTimestamp;
 import '../models/temperature_level.dart';
+import '../models/sensor_model.dart';
 
 class AlertsScreen extends StatelessWidget {
   const AlertsScreen({super.key});
@@ -64,6 +65,13 @@ class AlertsScreen extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 16),
+
+                _TemperatureOverviewCard(
+                  data: provider.currentData,
+                  isConnected: provider.isConnected,
+                  isDemoMode: provider.isDemoMode,
+                ),
+                const SizedBox(height: 12),
 
                 if (provider.temperatureSyncError != null)
                   Padding(
@@ -346,4 +354,186 @@ class AlertsScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class _TemperatureOverviewCard extends StatelessWidget {
+  const _TemperatureOverviewCard({
+    required this.data,
+    required this.isConnected,
+    required this.isDemoMode,
+  });
+
+  final SensorData data;
+  final bool isConnected;
+  final bool isDemoMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final pumpStatus = data.waterPumpActive
+        ? 'PUMP CIRCULATING'
+        : data.waterPumpReason == 'low_or_unavailable_water_level'
+        ? 'PUMP PAUSED · LOW WATER'
+        : data.waterPumpReason == 'status_unavailable' && !isDemoMode
+        ? 'UPDATE ESP32 FIRMWARE'
+        : 'PUMP ON STANDBY';
+    final pumpColor = data.waterPumpActive
+        ? const Color(0xFFB8F3C5)
+        : data.waterPumpReason == 'low_or_unavailable_water_level'
+        ? const Color(0xFFFFD18A)
+        : Colors.white70;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF174C36), Color(0xFF287A4A), Color(0xFF31965B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: LettuceGuardColors.primaryGreen.withValues(alpha: .2),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.device_thermostat, color: Colors.white),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'CLIMATE CONTROL',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              if (isDemoMode)
+                const Text(
+                  'DEMO',
+                  style: TextStyle(
+                    color: Color(0xFFFFE3A8),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )
+              else
+                Icon(
+                  isConnected ? Icons.wifi : Icons.wifi_off,
+                  color: Colors.white70,
+                  size: 16,
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _TemperatureReadout(
+                  icon: Icons.air,
+                  label: 'AIR · DHT22',
+                  value: data.hasValidAirTemperature
+                      ? data.airTemperature
+                      : null,
+                ),
+              ),
+              Container(width: 1, height: 42, color: Colors.white24),
+              Expanded(
+                child: _TemperatureReadout(
+                  icon: Icons.water_drop_outlined,
+                  label: 'NUTRIENT · DS18B20',
+                  value: !data.ds18b20Error && data.waterTemperature.isFinite
+                      ? data.waterTemperature
+                      : null,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                data.waterPumpActive ? Icons.sync : Icons.water_drop_outlined,
+                color: pumpColor,
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                pumpStatus,
+                style: TextStyle(
+                  color: pumpColor,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              const Text(
+                'AUTO 23°C ON · 22°C OFF',
+                style: TextStyle(color: Colors.white70, fontSize: 9),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TemperatureReadout extends StatelessWidget {
+  const _TemperatureReadout({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final double? value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: Colors.white70, size: 14),
+            const SizedBox(width: 5),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 8,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: .4,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value == null ? '—' : '${value!.toStringAsFixed(1)}°C',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 23,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
 }

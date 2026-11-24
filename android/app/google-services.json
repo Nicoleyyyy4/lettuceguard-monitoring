@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "248209768355",
-    "project_id": "lettuceguard-app",
-    "storage_bucket": "lettuceguard-app.firebasestorage.app"
+    "project_number": "640283536207",
+    "project_id": "lettuceguard-bd1f4",
+    "storage_bucket": "lettuceguard-bd1f4.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:248209768355:android:006da733bb62a110c42416",
+        "mobilesdk_app_id": "1:640283536207:android:d902735a2b84d56518333a",
         "android_client_info": {
           "package_name": "com.example.lettuceguard"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAv3ZaRiJP1IljKI5Y3AVHJQ5BNBcl7HmY"
+          "current_key": "AIzaSyAz-06C00vUZO13jg5Avjg_hfkHXa858t8"
         }
       ],
       "services": {

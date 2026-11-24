@@ -39,7 +39,9 @@ class AlertModel {
     this.presentedPriority = 0,
     this.transitions = const [],
   });
-  bool get isTemperatureAlert => alertType == 'air_temperature';
+  bool get isTemperatureAlert =>
+      alertType == 'air_temperature' || alertType == 'water_temperature';
+  bool get isWaterTemperatureAlert => alertType == 'water_temperature';
   bool get needsPopup =>
       !isResolved &&
       !isAcknowledged &&

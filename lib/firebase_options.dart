@@ -51,12 +51,13 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAv3ZaRiJP1IljKI5Y3AVHJQ5BNBcl7HmY',
-    appId: '1:248209768355:android:006da733bb62a110c42416',
-    messagingSenderId: '248209768355',
-    projectId: 'lettuceguard-app',
-    databaseURL: 'https://lettuceguard-app-default-rtdb.firebaseio.com',
-    storageBucket: 'lettuceguard-app.firebasestorage.app',
+    apiKey: 'AIzaSyAz-06C00vUZO13jg5Avjg_hfkHXa858t8',
+    appId: '1:640283536207:android:d902735a2b84d56518333a',
+    messagingSenderId: '640283536207',
+    projectId: 'lettuceguard-bd1f4',
+    authDomain: 'lettuceguard-bd1f4.firebaseapp.com',
+    databaseURL: 'https://lettuceguard-bd1f4-default-rtdb.firebaseio.com',
+    storageBucket: 'lettuceguard-bd1f4.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(

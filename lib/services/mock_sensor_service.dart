@@ -24,6 +24,7 @@ class MockSensorService {
   double basePh = 6.1;
   double baseTds = 720.0;
   double baseWaterLevelPct = 85.0;
+  bool _mockWaterPumpActive = false;
 
   Stream<SensorData> getSensorStream({
     Duration interval = const Duration(seconds: 2),
@@ -71,6 +72,21 @@ class MockSensorService {
         ((100.0 - currentLevelPct) * 0.3).toStringAsFixed(1),
       );
 
+      if (forceDs18b20Error || forceUltrasonicError || currentLevelPct < 25.0) {
+        _mockWaterPumpActive = false;
+      } else if (!_mockWaterPumpActive && currentWaterTemp >= 23.0) {
+        _mockWaterPumpActive = true;
+      } else if (_mockWaterPumpActive && currentWaterTemp <= 22.0) {
+        _mockWaterPumpActive = false;
+      }
+      final pumpReason = forceDs18b20Error
+          ? 'water_temperature_sensor_error'
+          : forceUltrasonicError || currentLevelPct < 25.0
+          ? 'low_or_unavailable_water_level'
+          : _mockWaterPumpActive
+          ? 'circulating_until_22c'
+          : 'temperature_normal';
+
       final data = SensorData(
         airTemperature: forceDht22Error ? -999.0 : currentAirTemp,
         airHumidity: forceDht22Error ? -999.0 : currentHumidity,
@@ -80,6 +96,10 @@ class MockSensorService {
         waterLevelPct: forceUltrasonicError ? 0.0 : currentLevelPct,
         waterLevelCm: forceUltrasonicError ? 999.0 : currentLevelCm,
         reservoirDepthCm: 30.0,
+        waterPumpActive: _mockWaterPumpActive,
+        waterPumpReason: pumpReason,
+        waterPumpOnThresholdC: 23.0,
+        waterPumpOffThresholdC: 22.0,
         timestamp: DateTime.now(),
         dht22Error: forceDht22Error,
         ds18b20Error: forceDs18b20Error,

@@ -25,6 +25,24 @@ Firebase current snapshots are now the default live source. Settings also retain
 an explicit ESP32 local HTTP option. Local HTTP responses must include an actual
 sensor Unix/ISO timestamp; receipt time is never substituted for measurement time.
 
+## Water-temperature pump automation
+
+The ESP32 reads the DS18B20 probe on GPIO 15 and controls an isolated relay module
+from GPIO 26. The relay is configured active-high by default; change
+`WATER_PUMP_RELAY_ACTIVE_LOW` if the installed relay is active-low. The pump starts
+at 23.0 C and stops at 22.0 C to prevent rapid relay switching. It remains off if
+the temperature probe fails or the ultrasonic water-level sensor is invalid/under
+25%. The pump is controlled locally, so Wi-Fi or Firebase outages do not prevent
+the temperature decision. Connect the relay input to GPIO 26 and power the pump
+through a properly rated relay; never connect the pump directly to an ESP32 pin.
+
+The firmware publishes `waterPumpActive`, `waterPumpReason`, and both thresholds
+with each current sensor sample. Flutter shows air and water readouts plus pump
+state on the Alerts page. A water alert popup starts at 23 C and resolves at 22 C;
+air-temperature events continue to use the DHT22 alert thresholds above. Demo
+mode offers water-temperature scenarios for exercising the app UI without running
+the physical pump.
+
 ### Configuration and stability
 
 `LettuceGuardConstants` and `TemperatureAlertConfig` configure these application

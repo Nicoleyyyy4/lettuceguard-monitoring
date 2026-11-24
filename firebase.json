@@ -3,20 +3,20 @@
     "platforms": {
       "android": {
         "default": {
-          "projectId": "lettuceguard-app",
-          "appId": "1:248209768355:android:006da733bb62a110c42416",
+          "projectId": "lettuceguard-bd1f4",
+          "appId": "1:640283536207:android:d902735a2b84d56518333a",
           "fileOutput": "android/app/google-services.json"
         }
       },
       "dart": {
         "lib/firebase_options.dart": {
-          "projectId": "lettuceguard-app",
+          "projectId": "lettuceguard-bd1f4",
           "configurations": {
-            "android": "1:248209768355:android:006da733bb62a110c42416",
-            "ios": "1:248209768355:ios:2c33236b1750c35fc42416",
-            "macos": "1:248209768355:ios:2c33236b1750c35fc42416",
-            "web": "1:248209768355:web:eaae0e41ba52f8f8c42416",
-            "windows": "1:248209768355:web:7a8dc8faea9e5e70c42416"
+            "android": "1:640283536207:android:d902735a2b84d56518333a",
+            "ios": "1:640283536207:ios:d902735a2b84d56518333a",
+            "macos": "1:640283536207:macos:d902735a2b84d56518333a",
+            "web": "1:640283536207:web:d902735a2b84d56518333a",
+            "windows": "1:640283536207:windows:d902735a2b84d56518333a"
           }
         }
       }

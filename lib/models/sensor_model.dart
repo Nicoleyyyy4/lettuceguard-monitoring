@@ -16,6 +16,10 @@ class SensorData {
   /// Legacy records can use the Firebase push key's creation time.
   final bool timestampFromHistoryKey;
   final String systemStatus; // OK, WARNING, ERROR
+  final bool waterPumpActive;
+  final String waterPumpReason;
+  final double waterPumpOnThresholdC;
+  final double waterPumpOffThresholdC;
 
   // Hardware sensor error flags
   final bool dht22Error;
@@ -39,6 +43,10 @@ class SensorData {
     this.hasValidTimestamp = true,
     this.timestampFromHistoryKey = false,
     this.systemStatus = 'OK',
+    this.waterPumpActive = false,
+    this.waterPumpReason = 'status_unavailable',
+    this.waterPumpOnThresholdC = 23.0,
+    this.waterPumpOffThresholdC = 22.0,
     this.dht22Error = false,
     this.ds18b20Error = false,
     this.phError = false,
@@ -97,6 +105,15 @@ class SensorData {
       hasValidTimestamp: ts != null,
       timestampFromHistoryKey: parsedTime == null && historyKeyTime != null,
       systemStatus: (json['systemStatus'] as String?) ?? 'OK',
+      waterPumpActive: json['waterPumpActive'] == true,
+      waterPumpReason:
+          (json['waterPumpReason'] as String?) ?? 'status_unavailable',
+      waterPumpOnThresholdC: json['waterPumpOnThresholdC'] is num
+          ? (json['waterPumpOnThresholdC'] as num).toDouble()
+          : 23.0,
+      waterPumpOffThresholdC: json['waterPumpOffThresholdC'] is num
+          ? (json['waterPumpOffThresholdC'] as num).toDouble()
+          : 22.0,
       dht22Error: (errors['dht22Error'] as bool?) ?? false,
       ds18b20Error: (errors['ds18b20Error'] as bool?) ?? false,
       phError: (errors['phError'] as bool?) ?? false,
@@ -152,6 +169,10 @@ class SensorData {
         'reservoirDepthCm': reservoirDepthCm.isFinite ? reservoirDepthCm : null,
       },
       'systemStatus': calculatedStatus,
+      'waterPumpActive': waterPumpActive,
+      'waterPumpReason': waterPumpReason,
+      'waterPumpOnThresholdC': waterPumpOnThresholdC,
+      'waterPumpOffThresholdC': waterPumpOffThresholdC,
       'sensorErrors': {
         'dht22Error': dht22Error,
         'ds18b20Error': ds18b20Error,

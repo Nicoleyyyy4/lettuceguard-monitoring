@@ -156,6 +156,7 @@ class _TemperatureDialog extends StatelessWidget {
       final event = provider.activeTemperatureAlert;
       if (event == null) return const SizedBox.shrink();
       final color = temperatureAlertColor(event.temperatureLevel!);
+      final sensorLabel = event.isWaterTemperatureAlert ? 'Water' : 'Air';
       return AlertDialog(
         key: const ValueKey('temperature-alert-dialog'),
         backgroundColor: Colors.white,
@@ -170,7 +171,7 @@ class _TemperatureDialog extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Event Air Temperature: ${event.measuredTemperature!.toStringAsFixed(1)}°C',
+                'Event $sensorLabel Temperature: ${event.measuredTemperature!.toStringAsFixed(1)}°C',
                 style: const TextStyle(
                   color: Colors.black87,
                   fontWeight: FontWeight.bold,
@@ -178,7 +179,9 @@ class _TemperatureDialog extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                event.temperatureLevel!.action,
+                event.isWaterTemperatureAlert
+                    ? event.message
+                    : event.temperatureLevel!.action,
                 style: const TextStyle(color: Colors.black87),
               ),
               const SizedBox(height: 8),
@@ -186,7 +189,8 @@ class _TemperatureDialog extends StatelessWidget {
                 'Sensor reading: ${historyTimestamp(event.readingTimestamp!)}',
                 style: const TextStyle(color: Colors.black54),
               ),
-              if (provider.temperatureDataProblem != null)
+              if (!event.isWaterTemperatureAlert &&
+                  provider.temperatureDataProblem != null)
                 Text(
                   '${provider.temperatureDataProblem} Recovery is unconfirmed.',
                   style: TextStyle(color: color),

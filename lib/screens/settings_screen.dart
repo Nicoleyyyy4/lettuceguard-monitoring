@@ -303,7 +303,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         if (kDebugMode && provider.isDemoMode) ...[
                           const SizedBox(height: 12),
                           const Text(
-                            'Developer demo air-temperature scenarios (simulated only)',
+                            'Developer demo temperature scenarios (simulated only)',
                           ),
                           Wrap(
                             spacing: 8,
@@ -319,6 +319,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 )
                                 .toList(),
                           ),
+                          const SizedBox(height: 8),
+                          const Text('Water temperature and pump scenarios'),
+                          Wrap(
+                            spacing: 8,
+                            children: [20.0, 23.5, 26.0]
+                                .map(
+                                  (value) => OutlinedButton(
+                                    onPressed: () =>
+                                        provider.setDemoWaterTemperature(value),
+                                    child: Text(
+                                      'Water ${value.toStringAsFixed(value % 1 == 0 ? 0 : 1)}°C',
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                          ),
                         ],
                         const Divider(height: 20),
 
@@ -327,7 +343,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           decoration: InputDecoration(
                             labelText: 'Firebase Realtime Database URL',
                             hintText:
-                                'https://lettuceguard-app-default-rtdb.firebaseio.com',
+                                'https://lettuceguard-bd1f4-default-rtdb.firebaseio.com',
                             prefixIcon: const Icon(Icons.link),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),

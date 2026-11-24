@@ -7,6 +7,7 @@
  *  - Analog pH Sensor: GPIO 34 (ADC1 CH6)
  *  - HC-SR04 Ultrasonic (Reservoir Water Level): Trig GPIO 5, Echo GPIO 18
  *  - Analog TDS / EC Meter: GPIO 35 (ADC1 CH7)
+ *  - Water circulation relay input: GPIO 26 (active-high by default)
  *
  * Cloud Sync:
  *  - Transmits sensor payloads over Wi-Fi to Firebase Realtime Database
@@ -20,13 +21,14 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <ArduinoJson.h>
+#include <string.h>
 
 // --- Wi-Fi & Firebase Configuration ---
 const char* WIFI_SSID = "YOUR_WIFI_SSID";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
-// Firebase Realtime Database Base URL (without trailing slash) 
-const char* FIREBASE_HOST = "https://lettuceguard-app-default-rtdb.firebaseio.com";
+// Firebase Realtime Database Base URL (without trailing slash)
+const char* FIREBASE_HOST = "https://lettuceguard-bd1f4-default-rtdb.firebaseio.com";
 const char* DEVICE_ID = "lettuceguard_node_01";
 
 // Optional Firebase Secret / Auth Token
@@ -44,6 +46,14 @@ const char* FIREBASE_AUTH = "";
 #define TRIG_PIN 5
 #define ECHO_PIN 18
 
+// Use an isolated relay module; never drive a pump directly from an ESP32 GPIO.
+// Change this pin/active level to match the actual relay wiring.
+#define WATER_PUMP_RELAY_PIN 26
+constexpr bool WATER_PUMP_RELAY_ACTIVE_LOW = false;
+constexpr float WATER_PUMP_START_C = 23.0;
+constexpr float WATER_PUMP_STOP_C = 22.0;
+constexpr float WATER_PUMP_MIN_LEVEL_PCT = 25.0;
+
 // --- Tank Physical Constants ---
 const float RESERVOIR_DEPTH_CM = 30.0; // Total height from sensor to tank bottom
 
@@ -59,6 +69,9 @@ DallasTemperature ds18b20(&oneWire);
 // --- Timing Variables ---
 unsigned long lastSampleTime = 0;
 const unsigned long SAMPLE_INTERVAL_MS = 3000; // Update current reading every 3 seconds
+unsigned long lastWifiAttempt = 0;
+bool waterPumpActive = false;
+const char* waterPumpReason = "temperature_normal";
 
 unsigned long lastHistoryTime = 0;
 const unsigned long HISTORY_INTERVAL_MS = 300000; // Push history snapshot every 5 minutes
@@ -76,21 +89,28 @@ void setup() {
   pinMode(PH_PIN, INPUT);
   pinMode(TDS_PIN, INPUT);
 
+  // Initialize relay OFF before switching the pin to output to avoid a startup pulse.
+  digitalWrite(WATER_PUMP_RELAY_PIN, WATER_PUMP_RELAY_ACTIVE_LOW ? HIGH : LOW);
+  pinMode(WATER_PUMP_RELAY_PIN, OUTPUT);
+
   // Initialize Sensors
   dht.begin();
   ds18b20.begin();
 
-  // Connect to Wi-Fi
+  // Start Wi-Fi without blocking local pump control while the network connects.
   connectWiFi();
+  lastWifiAttempt = millis();
 }
 
 void loop() {
-  // Reconnect Wi-Fi if dropped
-  if (WiFi.status() != WL_CONNECTED) {
+  unsigned long currentMillis = millis();
+
+  // Retry Wi-Fi in the background; pump automation continues while offline.
+  if (WiFi.status() != WL_CONNECTED &&
+      currentMillis - lastWifiAttempt >= 10000) {
+    lastWifiAttempt = currentMillis;
     connectWiFi();
   }
-
-  unsigned long currentMillis = millis();
 
   // 1. Regular Sampling & Current Payload Push
   if (currentMillis - lastSampleTime >= SAMPLE_INTERVAL_MS) {
@@ -106,24 +126,9 @@ void loop() {
 }
 
 void connectWiFi() {
-  Serial.print("Connecting to Wi-Fi: ");
+  Serial.print("Starting Wi-Fi connection to: ");
   Serial.println(WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-  int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-    delay(500);
-    Serial.print(".");
-    attempts++;
-  }
-
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\nWi-Fi Connected successfully!");
-    Serial.print("IP Address: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println("\nWi-Fi Connection Failed. Will retry in loop.");
-  }
 }
 
 void processAndSendSensorData(bool isHistorySnapshot) {
@@ -135,7 +140,8 @@ void processAndSendSensorData(bool isHistorySnapshot) {
   // --- 2. Read DS18B20 (Water Temperature) ---
   ds18b20.requestTemperatures();
   float waterTempC = ds18b20.getTempCByIndex(0);
-  bool ds18b20Error = (waterTempC == -127.00 || waterTempC == 85.00);
+  bool ds18b20Error = isnan(waterTempC) ||
+                      waterTempC == -127.00 || waterTempC == 85.00;
 
   // --- 3. Read HC-SR04 (Ultrasonic Water Level) ---
   float distanceCm = readUltrasonicDistance();
@@ -148,6 +154,9 @@ void processAndSendSensorData(bool isHistorySnapshot) {
     if (waterLevelPct < 0.0) waterLevelPct = 0.0;
     if (waterLevelPct > 100.0) waterLevelPct = 100.0;
   }
+
+  // Run pump locally from sensor readings, independent of Firebase availability.
+  updateWaterPump(waterTempC, ds18b20Error, waterLevelPct, ultrasonicError);
 
   // --- 4. Read Analog pH Sensor ---
   int rawAdcPh = readAnalogAverage(PH_PIN, 10);
@@ -173,7 +182,10 @@ void processAndSendSensorData(bool isHistorySnapshot) {
   String systemStatus = "OK";
   if (dht22Error || ds18b20Error || phError || ultrasonicError || tdsError || adcSaturation) {
     systemStatus = "ERROR";
-  } else if (phValue < 5.5 || phValue > 6.5 || waterTempC < 18.0 || waterTempC > 22.0 || waterLevelPct < 25.0) {
+  } else if (phValue < 5.5 || phValue > 6.5 ||
+             waterTempC < 18.0 || waterTempC > 22.0 ||
+             airTempC < 18.0 || airTempC > 26.0 ||
+             waterLevelPct < 25.0) {
     systemStatus = "WARNING";
   }
 
@@ -183,6 +195,10 @@ void processAndSendSensorData(bool isHistorySnapshot) {
   doc["airTemperature"] = dht22Error ? 0.0 : round(airTempC * 10.0) / 10.0;
   doc["airHumidity"] = dht22Error ? 0.0 : round(airHumidity * 10.0) / 10.0;
   doc["waterTemperature"] = ds18b20Error ? 0.0 : round(waterTempC * 10.0) / 10.0;
+  doc["waterPumpActive"] = waterPumpActive;
+  doc["waterPumpReason"] = waterPumpReason;
+  doc["waterPumpOnThresholdC"] = WATER_PUMP_START_C;
+  doc["waterPumpOffThresholdC"] = WATER_PUMP_STOP_C;
   doc["ph"] = phError ? 0.0 : round(phValue * 100.0) / 100.0;
   doc["tds"] = tdsError ? 0.0 : round(tdsPpm);
 
@@ -239,6 +255,46 @@ void processAndSendSensorData(bool isHistorySnapshot) {
       Serial.printf("Firebase Current PUT Result Code: %d\n", httpCode);
       http.end();
     }
+  }
+}
+
+void setWaterPump(bool active, const char* reason) {
+  const bool stateChanged = waterPumpActive != active;
+  const bool reasonChanged = strcmp(waterPumpReason, reason) != 0;
+  waterPumpActive = active;
+  waterPumpReason = reason;
+  const int activeLevel = WATER_PUMP_RELAY_ACTIVE_LOW ? LOW : HIGH;
+  const int inactiveLevel = WATER_PUMP_RELAY_ACTIVE_LOW ? HIGH : LOW;
+  if (stateChanged) {
+    digitalWrite(WATER_PUMP_RELAY_PIN, active ? activeLevel : inactiveLevel);
+  }
+  if (stateChanged || reasonChanged) {
+    Serial.printf("Water circulation pump %s (%s)\n",
+                  active ? "ON" : "OFF", reason);
+  }
+}
+
+void updateWaterPump(float waterTempC, bool temperatureError,
+                     float waterLevelPct, bool waterLevelError) {
+  // Fail safe: never run the pump without valid water temperature and level data.
+  if (temperatureError) {
+    setWaterPump(false, "water_temperature_sensor_error");
+    return;
+  }
+  if (waterLevelError || waterLevelPct < WATER_PUMP_MIN_LEVEL_PCT) {
+    setWaterPump(false, "low_or_unavailable_water_level");
+    return;
+  }
+
+  // Hysteresis keeps the relay from rapidly switching around 23 C.
+  if (!waterPumpActive && waterTempC >= WATER_PUMP_START_C) {
+    setWaterPump(true, "water_temperature_high");
+  } else if (waterPumpActive && waterTempC <= WATER_PUMP_STOP_C) {
+    setWaterPump(false, "water_temperature_recovered");
+  } else if (waterPumpActive) {
+    waterPumpReason = "circulating_until_22c";
+  } else {
+    waterPumpReason = "temperature_normal";
   }
 }
 
