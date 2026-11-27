@@ -3,6 +3,7 @@ import '../models/alert_model.dart';
 import '../models/temperature_level.dart';
 import '../models/chart_parameter.dart' show historyTimestamp;
 import '../providers/sensor_provider.dart';
+import '../utils/colors.dart';
 import '../utils/routes.dart';
 import 'temperature_alert_banner.dart';
 
@@ -29,6 +30,7 @@ class _TemperatureAlertHostState extends State<TemperatureAlertHost>
   bool _scheduled = false;
   AppLifecycleState _lifecycle = AppLifecycleState.resumed;
   final Set<String> _shown = {};
+
   @override
   void initState() {
     super.initState();
@@ -149,6 +151,7 @@ class _TemperatureDialog extends StatelessWidget {
   final SensorProvider provider;
   final ValueChanged<AlertModel> acknowledge;
   final VoidCallback viewAlerts;
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: provider,
@@ -157,56 +160,105 @@ class _TemperatureDialog extends StatelessWidget {
       if (event == null) return const SizedBox.shrink();
       final color = temperatureAlertColor(event.temperatureLevel!);
       final sensorLabel = event.isWaterTemperatureAlert ? 'Water' : 'Air';
+      final isDark = LettuceGuardColors.isDark(context);
+      final textPrimary = LettuceGuardColors.textPrimary(context);
+      final textSecondary = LettuceGuardColors.textSecondary(context);
+
       return AlertDialog(
         key: const ValueKey('temperature-alert-dialog'),
-        backgroundColor: Colors.white,
-        icon: Icon(Icons.warning_amber_rounded, color: color, size: 36),
+        backgroundColor: LettuceGuardColors.surface(context),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: color.withValues(alpha: 0.45), width: 1.5),
+        ),
+        icon: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: isDark ? 0.22 : 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.warning_amber_rounded, color: color, size: 32),
+        ),
         title: Text(
           '${event.isDemo ? 'DEMO • ' : ''}${event.title}',
-          style: TextStyle(color: color, fontWeight: FontWeight.bold),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Event $sensorLabel Temperature: ${event.measuredTemperature!.toStringAsFixed(1)}°C',
-                style: const TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                event.isWaterTemperatureAlert
-                    ? event.message
-                    : event.temperatureLevel!.action,
-                style: const TextStyle(color: Colors.black87),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Sensor reading: ${historyTimestamp(event.readingTimestamp!)}',
-                style: const TextStyle(color: Colors.black54),
-              ),
-              if (!event.isWaterTemperatureAlert &&
-                  provider.temperatureDataProblem != null)
-                Text(
-                  '${provider.temperatureDataProblem} Recovery is unconfirmed.',
-                  style: TextStyle(color: color),
-                ),
-              if (provider.temperatureSyncError != null)
-                Text(
-                  provider.temperatureSyncError!,
-                  style: TextStyle(color: color),
-                ),
-            ],
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
           ),
         ),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: isDark ? 0.14 : 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Event $sensorLabel Temperature: ${event.measuredTemperature!.toStringAsFixed(1)}°C',
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  event.isWaterTemperatureAlert
+                      ? event.message
+                      : event.temperatureLevel!.action,
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 13.5,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Sensor reading: ${historyTimestamp(event.readingTimestamp!)}',
+                  style: TextStyle(color: textSecondary, fontSize: 12),
+                ),
+                if (!event.isWaterTemperatureAlert &&
+                    provider.temperatureDataProblem != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      '${provider.temperatureDataProblem} Recovery is unconfirmed.',
+                      style: TextStyle(color: color, fontSize: 12.5),
+                    ),
+                  ),
+                if (provider.temperatureSyncError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      provider.temperatureSyncError!,
+                      style: TextStyle(color: color, fontSize: 12.5),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
         actions: [
           TextButton(onPressed: viewAlerts, child: const Text('View Alerts')),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: color),
+            style: FilledButton.styleFrom(
+              backgroundColor: color,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => acknowledge(event),
             child: const Text('Acknowledge'),
           ),

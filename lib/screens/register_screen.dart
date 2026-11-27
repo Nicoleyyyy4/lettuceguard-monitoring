@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../utils/colors.dart';
-import '../widgets/neumorphic_card.dart';
+import '../utils/responsive.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -19,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _passwordErrorText;
+  String _passwordDraft = '';
 
   @override
   void dispose() {
@@ -61,77 +62,62 @@ class _RegisterScreenState extends State<RegisterScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: LettuceGuardColors.neuBackground,
         title: const Row(
           children: [
             Icon(
               Icons.shield_outlined,
               color: LettuceGuardColors.statusError,
-              size: 28,
+              size: 26,
             ),
             SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Password Guide',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: LettuceGuardColors.textDark,
-                ),
-              ),
-            ),
+            Expanded(child: Text('Password Guide')),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Your password must satisfy all requirements:',
-              style: TextStyle(
-                fontSize: 13,
-                color: LettuceGuardColors.textDark,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Your password must satisfy all requirements:',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: LettuceGuardColors.textPrimary(ctx),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            ...unmetRules.map(
-              (rule) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.cancel,
-                      color: LettuceGuardColors.statusError,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        rule,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: LettuceGuardColors.textDark,
+              const SizedBox(height: 12),
+              ...unmetRules.map(
+                (rule) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.cancel_rounded,
+                        color: LettuceGuardColors.statusError,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          rule,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: LettuceGuardColors.textPrimary(ctx),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: LettuceGuardColors.primaryGreen,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
+          FilledButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('GOT IT'),
           ),
@@ -170,7 +156,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      // Register in Firebase Auth & write profile to Firebase Realtime DB
       await _authService.registerWithEmail(name, email, password);
 
       if (!mounted) return;
@@ -220,322 +205,376 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = LettuceGuardResponsive.isDesktopAuth(context);
+
     return Scaffold(
-      backgroundColor: LettuceGuardColors.neuBackground,
-      appBar: AppBar(
-        title: const Text(
-          'Create Account',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: LettuceGuardColors.primaryGreen,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: Stack(
-        children: [
-          // 1. Hydroponics Background Image Design with Gradient Overlay
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(
-                    'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=1200&q=80',
+      backgroundColor: LettuceGuardColors.canvas(context),
+      appBar: isDesktop
+          ? null
+          : AppBar(
+              title: const Text('Create Account'),
+              backgroundColor: LettuceGuardColors.primaryGreenDark,
+              foregroundColor: Colors.white,
+            ),
+      body: isDesktop
+          ? Row(
+              children: [
+                Expanded(flex: 10, child: _buildLeftHero(context)),
+                Expanded(
+                  flex: 11,
+                  child: Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 36,
+                        vertical: 32,
+                      ),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 460),
+                        child: _buildRegisterForm(context),
+                      ),
+                    ),
                   ),
-                  fit: BoxFit.cover,
-                  alignment: Alignment.center,
                 ),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      LettuceGuardColors.neuBackground.withValues(alpha: 0.92),
-                      LettuceGuardColors.neuBackground.withValues(alpha: 0.82),
-                      LettuceGuardColors.primaryGreen.withValues(alpha: 0.15),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+              ],
+            )
+          : SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 24,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 460),
+                    child: _buildRegisterForm(context),
                   ),
                 ),
               ),
             ),
-          ),
+    );
+  }
 
-          // Decorative Neumorphic Circle Accent
+  Widget _buildLeftHero(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LettuceGuardColors.heroGradient(context),
+      ),
+      child: Stack(
+        children: [
           Positioned(
-            bottom: -50,
-            left: -50,
+            bottom: -90,
+            left: -70,
             child: Container(
-              width: 180,
-              height: 180,
+              width: 300,
+              height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: LettuceGuardColors.accentLightGreen.withValues(
-                  alpha: 0.25,
+                  alpha: 0.14,
                 ),
               ),
             ),
           ),
-
-          // 2. Main Scrollable Neumorphic Form Container
           SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Header Icon Badge
-                    NeumorphicCard(
-                      borderRadius: 100,
-                      padding: const EdgeInsets.all(18),
-                      distance: 6,
-                      blur: 14,
-                      child: const Icon(
-                        Icons.person_add_alt_1_rounded,
-                        size: 48,
-                        color: LettuceGuardColors.primaryGreen,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    const Text(
-                      'Join LettuceGuard',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: LettuceGuardColors.textDark,
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    const Text(
-                      'Set up your greenhouse operator profile',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: LettuceGuardColors.textMuted,
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // 3. Floating Neumorphic Cardbox
-                    NeumorphicCard(
-                      borderRadius: 28,
-                      padding: const EdgeInsets.all(24),
-                      distance: 10,
-                      blur: 20,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Operator Details',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: LettuceGuardColors.textDark,
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-
-                          // Full Name Input Field
-                          NeumorphicCard(
-                            isInset: true,
-                            borderRadius: 16,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            distance: 3,
-                            blur: 6,
-                            child: TextField(
-                              controller: nameController,
-                              enabled: !_isLoading,
-                              decoration: const InputDecoration(
-                                labelText: 'Full Name',
-                                labelStyle: TextStyle(
-                                  fontSize: 13,
-                                  color: LettuceGuardColors.textMuted,
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.person_outline,
-                                  color: LettuceGuardColors.primaryGreen,
-                                ),
-                                border: InputBorder.none,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Email Input Field
-                          NeumorphicCard(
-                            isInset: true,
-                            borderRadius: 16,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            distance: 3,
-                            blur: 6,
-                            child: TextField(
-                              controller: emailController,
-                              enabled: !_isLoading,
-                              keyboardType: TextInputType.emailAddress,
-                              decoration: const InputDecoration(
-                                labelText: 'Email Address',
-                                labelStyle: TextStyle(
-                                  fontSize: 13,
-                                  color: LettuceGuardColors.textMuted,
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.email_outlined,
-                                  color: LettuceGuardColors.primaryGreen,
-                                ),
-                                border: InputBorder.none,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Password Input Field with Interactive Eye Toggle & Validation
-                          NeumorphicCard(
-                            isInset: true,
-                            borderRadius: 16,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            distance: 3,
-                            blur: 6,
-                            child: TextField(
-                              controller: passwordController,
-                              enabled: !_isLoading,
-                              obscureText: _obscurePassword,
-                              onChanged: (val) {
-                                if (_passwordErrorText != null) {
-                                  setState(() {
-                                    _passwordErrorText = _validatePassword(val);
-                                  });
-                                }
-                              },
-                              decoration: InputDecoration(
-                                labelText: 'Password',
-                                hintText: '8-12 chars, A-Z, 0-9, symbol',
-                                hintStyle: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.black38,
-                                ),
-                                labelStyle: const TextStyle(
-                                  fontSize: 13,
-                                  color: LettuceGuardColors.textMuted,
-                                ),
-                                prefixIcon: const Icon(
-                                  Icons.lock_outline,
-                                  color: LettuceGuardColors.primaryGreen,
-                                ),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                    color: LettuceGuardColors.textMuted,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
-                                ),
-                                border: InputBorder.none,
-                              ),
-                            ),
-                          ),
-
-                          // Password Rule Error / Warning Text
-                          if (_passwordErrorText != null) ...[
-                            const SizedBox(height: 6),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8),
-                              child: Text(
-                                _passwordErrorText!,
-                                style: const TextStyle(
-                                  color: LettuceGuardColors.statusError,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-
-                          const SizedBox(height: 24),
-
-                          // Neumorphic Primary Register Button
-                          GestureDetector(
-                            onTap: _isLoading ? null : _handleRegistration,
-                            child: NeumorphicCard(
-                              borderRadius: 18,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: LettuceGuardColors.primaryGreen,
-                              distance: 6,
-                              blur: 12,
-                              child: Center(
-                                child: _isLoading
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.5,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                Colors.white,
-                                              ),
-                                        ),
-                                      )
-                                    : const Text(
-                                        'CREATE ACCOUNT',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 1.0,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Back to Login Button
-                    TextButton.icon(
-                      onPressed: _isLoading
-                          ? null
-                          : () {
-                              Navigator.pop(context);
-                            },
-                      icon: const Icon(
-                        Icons.arrow_back,
-                        size: 18,
-                        color: LettuceGuardColors.primaryGreen,
-                      ),
-                      label: const Text(
-                        'Already have an account? Sign In',
-                        style: TextStyle(
-                          color: LettuceGuardColors.primaryGreen,
-                          fontWeight: FontWeight.bold,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.eco_rounded,
+                          color: Colors.white,
+                          size: 24,
                         ),
                       ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'LettuceGuard',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Set up your operator workspace.',
+                          style: TextStyle(
+                            fontSize: 34,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            height: 1.15,
+                            letterSpacing: -0.7,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          'Create an authenticated operator profile to synchronize greenhouse alerts, inspect real-time telemetry, and manage hardware nodes securely.',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.white.withValues(alpha: 0.85),
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                  Text(
+                    'Protected with Firebase Auth & Realtime Telemetry',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.65),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegisterForm(BuildContext context) {
+    final lenOk = _passwordDraft.length >= 8 && _passwordDraft.length <= 12;
+    final upperOk = RegExp(r'[A-Z]').hasMatch(_passwordDraft);
+    final numOk = RegExp(r'[0-9]').hasMatch(_passwordDraft);
+    final symOk = RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(_passwordDraft);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: LettuceGuardColors.surface(context),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: LettuceGuardColors.border(context)),
+            boxShadow: [
+              BoxShadow(
+                color: LettuceGuardColors.shadow(context),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: LettuceGuardColors.primary(
+                        context,
+                      ).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      Icons.person_add_alt_1_rounded,
+                      color: LettuceGuardColors.primary(context),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Join LettuceGuard',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: LettuceGuardColors.textPrimary(context),
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        Text(
+                          'Set up your greenhouse operator profile',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: LettuceGuardColors.textSecondary(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: nameController,
+                enabled: !_isLoading,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Full Name',
+                  prefixIcon: Icon(Icons.person_outline_rounded),
                 ),
               ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: emailController,
+                enabled: !_isLoading,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Email Address',
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: passwordController,
+                enabled: !_isLoading,
+                obscureText: _obscurePassword,
+                textInputAction: TextInputAction.done,
+                onChanged: (val) {
+                  setState(() {
+                    _passwordDraft = val;
+                    if (_passwordErrorText != null) {
+                      _passwordErrorText = _validatePassword(val);
+                    }
+                  });
+                },
+                onSubmitted: (_) {
+                  if (!_isLoading) _handleRegistration();
+                },
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  hintText: '8-12 chars, A-Z, 0-9, symbol',
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  _PasswordRuleChip(label: '8-12 chars', met: lenOk),
+                  _PasswordRuleChip(label: 'A-Z', met: upperOk),
+                  _PasswordRuleChip(label: '0-9', met: numOk),
+                  _PasswordRuleChip(label: 'Symbol', met: symOk),
+                ],
+              ),
+              if (_passwordErrorText != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  _passwordErrorText!,
+                  style: const TextStyle(
+                    color: LettuceGuardColors.statusError,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: FilledButton(
+                  onPressed: _isLoading ? null : _handleRegistration,
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.4,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : const Text('CREATE ACCOUNT'),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Center(
+          child: TextButton.icon(
+            onPressed: _isLoading ? null : () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_rounded, size: 18),
+            label: const Text(
+              'Already have an account? Sign In',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PasswordRuleChip extends StatelessWidget {
+  final String label;
+  final bool met;
+
+  const _PasswordRuleChip({required this.label, required this.met});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = met
+        ? LettuceGuardColors.statusOk
+        : LettuceGuardColors.textSecondary(context);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 160),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: met
+            ? LettuceGuardColors.statusOk.withValues(alpha: 0.12)
+            : LettuceGuardColors.surfaceElevated(context),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: met
+              ? LettuceGuardColors.statusOk.withValues(alpha: 0.4)
+              : LettuceGuardColors.border(context),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            met ? Icons.check_circle_rounded : Icons.circle_outlined,
+            size: 13,
+            color: color,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
             ),
           ),
         ],

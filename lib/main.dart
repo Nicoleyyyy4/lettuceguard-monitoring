@@ -9,6 +9,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/alerts_screen.dart';
 import 'screens/settings_screen.dart';
+import 'utils/app_theme.dart';
 import 'utils/colors.dart';
 import 'utils/routes.dart';
 import 'widgets/temperature_alert_host.dart';
@@ -73,41 +74,133 @@ class _FirebaseStartupGateState extends State<FirebaseStartupGate> {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      title: 'LettuceGuard',
+      theme: LettuceGuardTheme.light,
       home: Scaffold(
+        backgroundColor: LettuceGuardColors.background,
         body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: _isInitializing
-                ? const Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Starting LettuceGuard…'),
-                    ],
-                  )
-                : Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.cloud_off, size: 48),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'LettuceGuard could not start Firebase. Check the '
-                        'phone\'s internet connection and app configuration.',
-                        textAlign: TextAlign.center,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: _isInitializing
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [
+                                LettuceGuardColors.primaryGreenDark,
+                                LettuceGuardColors.primaryGreen,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: LettuceGuardColors.primaryGreen
+                                    .withValues(alpha: 0.24),
+                                blurRadius: 24,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.eco_rounded,
+                            size: 40,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        const SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: LettuceGuardColors.primaryGreen,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Starting LettuceGuard…',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: LettuceGuardColors.textDark,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: LettuceGuardColors.borderLight,
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      SelectableText(
-                        _initializationError.toString(),
-                        textAlign: TextAlign.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: LettuceGuardColors.statusError.withValues(
+                                alpha: 0.1,
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.cloud_off_rounded,
+                              size: 36,
+                              color: LettuceGuardColors.statusError,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          const Text(
+                            'Connection Issue',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: LettuceGuardColors.textDark,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'LettuceGuard could not start Firebase. Check the '
+                            'device\'s internet connection and app configuration.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: LettuceGuardColors.textMuted,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SelectableText(
+                            _initializationError.toString(),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: LettuceGuardColors.statusError,
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: _retryFirebaseInitialization,
+                              icon: const Icon(Icons.refresh_rounded, size: 18),
+                              label: const Text('Retry'),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      FilledButton(
-                        onPressed: _retryFirebaseInitialization,
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
+                    ),
+            ),
           ),
         ),
       ),
@@ -155,33 +248,8 @@ class _LettuceGuardAppState extends State<LettuceGuardApp> {
               child: child!,
             ),
             themeMode: _sensorProvider.themeMode,
-            theme: ThemeData(
-              useMaterial3: true,
-              brightness: Brightness.light,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: LettuceGuardColors.primaryGreen,
-                brightness: Brightness.light,
-                surface: LettuceGuardColors.background,
-              ),
-              scaffoldBackgroundColor: LettuceGuardColors.background,
-              appBarTheme: const AppBarTheme(
-                backgroundColor: LettuceGuardColors.primaryGreen,
-                foregroundColor: Colors.white,
-              ),
-            ),
-            darkTheme: ThemeData(
-              useMaterial3: true,
-              brightness: Brightness.dark,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: LettuceGuardColors.primaryGreen,
-                brightness: Brightness.dark,
-              ),
-              scaffoldBackgroundColor: const Color(0xFF121B14),
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Color(0xFF1B2A1E),
-                foregroundColor: Colors.white,
-              ),
-            ),
+            theme: LettuceGuardTheme.light,
+            darkTheme: LettuceGuardTheme.dark,
             initialRoute: LettuceGuardRoutes.splash,
             routes: {
               LettuceGuardRoutes.splash: (_) => const SplashScreen(),

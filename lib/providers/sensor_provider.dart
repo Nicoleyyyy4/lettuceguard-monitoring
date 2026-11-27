@@ -886,4 +886,10 @@ class SensorProviderScope extends InheritedNotifier<SensorProvider> {
     assert(scope != null, 'No SensorProviderScope found in context');
     return scope!.provider;
   }
+
+  static SensorProvider? maybeOf(BuildContext context) {
+    return context
+        .dependOnInheritedWidgetOfExactType<SensorProviderScope>()
+        ?.provider;
+  }
 }

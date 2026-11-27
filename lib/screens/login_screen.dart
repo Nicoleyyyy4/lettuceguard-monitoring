@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import '../providers/sensor_provider.dart';
 import '../services/auth_service.dart';
 import '../utils/colors.dart';
-import '../widgets/neumorphic_card.dart';
+import '../utils/responsive.dart';
 import 'dashboard_screen.dart';
 import 'register_screen.dart';
 
@@ -77,13 +78,13 @@ class _LoginScreenState extends State<LoginScreen> {
           'invalid-email' => 'Please enter a valid email address.',
           'user-disabled' => 'This account has been disabled.',
           'network-request-failed' =>
-            'Could not reach Firebase. Check the phone’s internet connection.',
+            'Could not reach Firebase. Check the device’s internet connection.',
           'operation-not-allowed' =>
             'Email and password sign-in is not enabled for this Firebase project.',
           'too-many-requests' =>
             'Too many sign-in attempts. Wait a while, then try again.',
           'invalid-api-key' =>
-            'Firebase rejected this app’s API key. Check the Android Firebase configuration.',
+            'Firebase rejected this app’s API key. Check the Firebase configuration.',
           _ => message ?? 'Sign in failed (Firebase error: $code).',
         },
         _ => 'Sign in failed. Please try again.',
@@ -106,304 +107,489 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = LettuceGuardResponsive.isDesktopAuth(context);
+    final provider = SensorProviderScope.maybeOf(context);
+
     return Scaffold(
-      backgroundColor: LettuceGuardColors.neuBackground,
+      backgroundColor: LettuceGuardColors.canvas(context),
       body: Stack(
         children: [
-          // 1. Background Image Design with Gradient Overlay
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(
-                    'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=1200&q=80',
+          if (isDesktop)
+            Row(
+              children: [
+                Expanded(flex: 11, child: _buildHeroShowcase(context)),
+                Expanded(
+                  flex: 10,
+                  child: Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 36,
+                        vertical: 32,
+                      ),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 440),
+                        child: _buildLoginCard(context, showBrandHeader: false),
+                      ),
+                    ),
                   ),
-                  fit: BoxFit.cover,
-                  alignment: Alignment.center,
                 ),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      LettuceGuardColors.neuBackground.withValues(alpha: 0.92),
-                      LettuceGuardColors.neuBackground.withValues(alpha: 0.82),
-                      LettuceGuardColors.primaryGreen.withValues(alpha: 0.15),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+              ],
+            )
+          else
+            _buildMobileLayout(context),
+          if (provider != null)
+            Positioned(
+              top: MediaQuery.paddingOf(context).top + 12,
+              right: 16,
+              child: Material(
+                color: LettuceGuardColors.surface(
+                  context,
+                ).withValues(alpha: 0.9),
+                shape: CircleBorder(
+                  side: BorderSide(color: LettuceGuardColors.border(context)),
+                ),
+                child: IconButton(
+                  tooltip: provider.isDarkMode
+                      ? 'Switch to Light Theme'
+                      : 'Switch to Dark Theme',
+                  icon: Icon(
+                    provider.isDarkMode
+                        ? Icons.light_mode_rounded
+                        : Icons.dark_mode_rounded,
+                    size: 20,
+                    color: LettuceGuardColors.textPrimary(context),
                   ),
+                  onPressed: provider.toggleThemeMode,
                 ),
               ),
             ),
-          ),
+        ],
+      ),
+    );
+  }
 
-          // Decorative Neumorphic Accent Circle
+  Widget _buildHeroShowcase(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LettuceGuardColors.heroGradient(context),
+      ),
+      child: Stack(
+        children: [
           Positioned(
-            top: -60,
-            right: -60,
+            top: -80,
+            left: -60,
             child: Container(
-              width: 200,
-              height: 200,
+              width: 280,
+              height: 280,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: LettuceGuardColors.accentLightGreen.withValues(
-                  alpha: 0.2,
+                  alpha: 0.12,
                 ),
               ),
             ),
           ),
-
-          // 2. Main Neumorphic Content
+          Positioned(
+            bottom: -120,
+            right: -60,
+            child: Container(
+              width: 340,
+              height: 340,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: LettuceGuardColors.secondaryTeal.withValues(alpha: 0.18),
+              ),
+            ),
+          ),
           SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Header Logo Badge
-                    NeumorphicCard(
-                      borderRadius: 100,
-                      padding: const EdgeInsets.all(20),
-                      distance: 8,
-                      blur: 16,
-                      child: const Icon(
-                        Icons.eco_rounded,
-                        size: 64,
-                        color: LettuceGuardColors.primaryGreen,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Brand mark
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(11),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.eco_rounded,
+                          color: Colors.white,
+                          size: 26,
+                        ),
                       ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    const Text(
-                      'LettuceGuard',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: LettuceGuardColors.textDark,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    const Text(
-                      'IoT Hydroponics Monitoring System',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: LettuceGuardColors.textMuted,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    // 3. Floating Neumorphic Cardbox
-                    NeumorphicCard(
-                      borderRadius: 28,
-                      padding: const EdgeInsets.all(24),
-                      distance: 10,
-                      blur: 20,
-                      child: Column(
+                      const SizedBox(width: 12),
+                      const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Sign In',
+                          Text(
+                            'LettuceGuard',
                             style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: LettuceGuardColors.textDark,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.3,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Enter your credentials to monitor your greenhouse.',
+                          Text(
+                            'Smart Hydroponics Telemetry',
                             style: TextStyle(
                               fontSize: 12,
-                              color: LettuceGuardColors.textMuted,
-                            ),
-                          ),
-
-                          const SizedBox(height: 22),
-
-                          // Email Input Field
-                          NeumorphicCard(
-                            isInset: true,
-                            borderRadius: 16,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            distance: 3,
-                            blur: 6,
-                            child: TextField(
-                              controller: emailController,
-                              enabled: !_isLoading,
-                              keyboardType: TextInputType.emailAddress,
-                              decoration: const InputDecoration(
-                                labelText: 'Email Address',
-                                labelStyle: TextStyle(
-                                  fontSize: 13,
-                                  color: LettuceGuardColors.textMuted,
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.email_outlined,
-                                  color: LettuceGuardColors.primaryGreen,
-                                ),
-                                border: InputBorder.none,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 18),
-
-                          // Password Input Field with Eye Icon Toggle & Rule Validation
-                          NeumorphicCard(
-                            isInset: true,
-                            borderRadius: 16,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            distance: 3,
-                            blur: 6,
-                            child: TextField(
-                              controller: passwordController,
-                              enabled: !_isLoading,
-                              obscureText: _obscurePassword,
-                              decoration: InputDecoration(
-                                labelText: 'Password',
-                                labelStyle: const TextStyle(
-                                  fontSize: 13,
-                                  color: LettuceGuardColors.textMuted,
-                                ),
-                                prefixIcon: const Icon(
-                                  Icons.lock_outline,
-                                  color: LettuceGuardColors.primaryGreen,
-                                ),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                    color: LettuceGuardColors.textMuted,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
-                                ),
-                                border: InputBorder.none,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 26),
-
-                          // Neumorphic Primary Action Button
-                          GestureDetector(
-                            onTap: _isLoading ? null : _handleLogin,
-                            child: NeumorphicCard(
-                              borderRadius: 18,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: LettuceGuardColors.primaryGreen,
-                              distance: 6,
-                              blur: 12,
-                              child: Center(
-                                child: _isLoading
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.5,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                Colors.white,
-                                              ),
-                                        ),
-                                      )
-                                    : const Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            'LOGIN TO SYSTEM',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 1.0,
-                                            ),
-                                          ),
-                                          SizedBox(width: 8),
-                                          Icon(
-                                            Icons.arrow_forward_rounded,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                        ],
-                                      ),
-                              ),
+                              color: Colors.white70,
                             ),
                           ),
                         ],
                       ),
-                    ),
+                    ],
+                  ),
 
-                    const SizedBox(height: 24),
-
-                    // Neumorphic Secondary Register Button
-                    GestureDetector(
-                      onTap: _isLoading
-                          ? null
-                          : () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const RegisterScreen(),
-                                ),
-                              );
-                            },
-                      child: NeumorphicCard(
-                        borderRadius: 20,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                  // Main pitch
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 460),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Precision greenhouse monitoring, everywhere.',
+                          style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            height: 1.15,
+                            letterSpacing: -0.8,
+                          ),
                         ),
-                        distance: 4,
-                        blur: 8,
-                        child: Wrap(
-                          alignment: WrapAlignment.center,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 6,
-                          children: const [
-                            Text(
-                              "Don't have an account?",
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: LettuceGuardColors.textMuted,
-                              ),
-                            ),
-                            Text(
-                              'Register Here',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: LettuceGuardColors.primaryGreen,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 14),
+                        Text(
+                          'Track nutrient pH, TDS, water temperature, reservoir depth, and air climate in real time with automated thermal safeguards.',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.white.withValues(alpha: 0.85),
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        const _HeroFeatureTile(
+                          icon: Icons.sensors_rounded,
+                          title: 'Live ESP32 & Cloud Telemetry',
+                          subtitle:
+                              'Real-time readings for DHT22, DS18B20, pH, TDS, and ultrasonic tank levels.',
+                        ),
+                        const SizedBox(height: 14),
+                        const _HeroFeatureTile(
+                          icon: Icons.thermostat_auto_rounded,
+                          title: 'Automated Heat & Pump Alerts',
+                          subtitle:
+                              'Confirmed multi-stage heat warnings with automatic circulation pump status.',
+                        ),
+                        const SizedBox(height: 14),
+                        const _HeroFeatureTile(
+                          icon: Icons.insights_rounded,
+                          title: 'Interactive Historical Analytics',
+                          subtitle:
+                              'Inspect optimal nutrient zones and chronological greenhouse trends.',
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Text(
+                    'LettuceGuard IoT Hydroponics Platform',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.65),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context) {
+    return Stack(
+      children: [
+        // Top gradient accent backdrop
+        Container(
+          height: 240,
+          decoration: BoxDecoration(
+            gradient: LettuceGuardColors.heroGradient(context),
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(36),
+            ),
+          ),
+        ),
+        SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.16),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
+                      child: const Icon(
+                        Icons.eco_rounded,
+                        size: 46,
+                        color: Colors.white,
+                      ),
                     ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'LettuceGuard',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'IoT Hydroponics Monitoring System',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.86),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildLoginCard(context, showBrandHeader: false),
                   ],
                 ),
               ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginCard(
+    BuildContext context, {
+    required bool showBrandHeader,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: LettuceGuardColors.surface(context),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: LettuceGuardColors.border(context)),
+            boxShadow: [
+              BoxShadow(
+                color: LettuceGuardColors.shadow(context),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Welcome back',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: LettuceGuardColors.textPrimary(context),
+                  letterSpacing: -0.4,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Sign in with your operator account to monitor your greenhouse.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: LettuceGuardColors.textSecondary(context),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: emailController,
+                enabled: !_isLoading,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Email Address',
+                  hintText: 'operator@lettuceguard.io',
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                enabled: !_isLoading,
+                obscureText: _obscurePassword,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) {
+                  if (!_isLoading) _handleLogin();
+                },
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: FilledButton(
+                  onPressed: _isLoading ? null : _handleLogin,
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.4,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('LOGIN TO SYSTEM'),
+                            SizedBox(width: 8),
+                            Icon(Icons.arrow_forward_rounded, size: 19),
+                          ],
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        Center(
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4,
+            children: [
+              Text(
+                "Don't have an account?",
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: LettuceGuardColors.textSecondary(context),
+                ),
+              ),
+              TextButton(
+                onPressed: _isLoading
+                    ? null
+                    : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RegisterScreen(),
+                          ),
+                        );
+                      },
+                child: const Text(
+                  'Register Here',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HeroFeatureTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _HeroFeatureTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: LettuceGuardColors.accentLightGreen,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.78),
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
